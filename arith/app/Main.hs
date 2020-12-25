@@ -1,6 +1,6 @@
 module Main where
 
-import Arith.Repl
+import Arith.Repl ( repl )
 
 main :: IO ()
 main = repl
