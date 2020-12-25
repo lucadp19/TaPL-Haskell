@@ -3,6 +3,7 @@
 `Arith` is a small untyped programming language capable only of the most basic arithmetic and boolean operation. In particular it supports:
 - an `if-then-else` construct
 - `succ` and `prec` operators, to construct the natural numbers
+- `isZero?`, which is an operator that tests if a number is zero or not
 - and... basically that's it.
 
 The full BNF grammar for Arith is the following:
@@ -12,6 +13,7 @@ The full BNF grammar for Arith is the following:
         | 0
         | succ t
         | prec t
+        | isZero? t
         | if t then t else t
     
 Provided you've installed `stack`, `Arith` implements a simple but powerful REPL (Read-Eval-Print-Loop) with the following commands:
