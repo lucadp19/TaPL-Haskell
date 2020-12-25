@@ -1,6 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Arith.Parser 
     ( parseTerm
+    , parseExpr
     ) where
 
 import Arith.Syntax
