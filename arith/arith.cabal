@@ -27,6 +27,7 @@ library
   exposed-modules:
       Arith.Eval
       Arith.Parser
+      Arith.Pretty
       Arith.Repl
       Arith.Syntax
   other-modules:
@@ -37,6 +38,7 @@ library
       base >=4.7 && <5
     , haskeline
     , megaparsec
+    , prettyprinter
     , text
     , transformers
   default-language: Haskell2010
@@ -53,6 +55,7 @@ executable arith-exe
     , base >=4.7 && <5
     , haskeline
     , megaparsec
+    , prettyprinter
     , text
     , transformers
   default-language: Haskell2010
@@ -70,6 +73,7 @@ test-suite arith-test
     , base >=4.7 && <5
     , haskeline
     , megaparsec
+    , prettyprinter
     , text
     , transformers
   default-language: Haskell2010

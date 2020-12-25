@@ -24,6 +24,7 @@ dependencies:
 - text
 - megaparsec
 - transformers
+- prettyprinter
 - haskeline
 
 library:
