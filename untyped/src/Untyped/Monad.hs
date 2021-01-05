@@ -1,15 +1,23 @@
 {-# LANGUAGE GeneralisedNewtypeDeriving #-}
 
-module Untyped.Monad where
+module Untyped.Monad 
+    ( -- * The monad
+      Eval(..)
+    ) where
 
 import qualified Data.Text as T
-import Untyped.Environment
+import Untyped.Environment ( Env )
 import Control.Monad.Reader
+import System.Console.Haskeline ( MonadException )
 
--- | The Evaluation monad: it gives access to a lexical scope and the power to do IO.
+{- |
+The Evaluation monad: it gives access to a lexical scope based on the
+environment type @Env@, and the power to do IO through @MonadIO@.
+-}
 newtype Eval a = Eval { runEval :: ReaderT Env IO a }
     deriving ( Functor
              , Applicative
              , Monad
              , MonadIO
-             , MonadReader Env)
+             , MonadReader Env
+             , MonadException )
