@@ -1,10 +1,13 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Untyped.Parser 
-    ( parseTerm
+    ( -- * Language parsers
+      parseTerm
+    , parseLet
     ) where
 
-import Untyped.Syntax
+import Untyped.Syntax ( Term(..) )
 import Untyped.Environment
+import Untyped.Monad ( Eval )
 
 import Data.Void ( Void )
 import Data.List ( foldl1' )
@@ -15,8 +18,8 @@ import Text.Megaparsec
 import Text.Megaparsec.Char
 import qualified Text.Megaparsec.Char.Lexer as L
 
--- | The monadic parser with a lexical scope given by @ReaderT Env@.
-type Parser = ReaderT Env (Parsec Void T.Text)
+-- | The monadic parser with a lexical scope given by the @Eval@ monad.
+type Parser = ParsecT Void T.Text Eval
 
 -- | The whitespace lexer.
 ws :: Parser ()
@@ -77,8 +80,16 @@ parseSingle = parens parseTerm
 parseApp :: Parser Term
 parseApp = do
     apps <- some parseSingle
-    return $ foldl1' App apps
+    pure $ foldl1' App apps
 
 -- | The parser for an Arith term.
 parseTerm :: Parser Term
 parseTerm = parseApp
+
+-- | The parser for a global let expression.
+parseLet :: Parser (T.Text, Term)
+parseLet = do
+    globName <- identifier
+    symbol "="
+    globTerm <- parseTerm
+    pure (globName, globTerm)
