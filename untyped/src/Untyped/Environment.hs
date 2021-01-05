@@ -1,4 +1,5 @@
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE LambdaCase #-}
 module Untyped.Environment 
     ( -- * Env type
       Env
@@ -71,13 +72,23 @@ class HasLocals a where
                   -> a          -- ^ The given environment.
                   -> Maybe Int
     -- | Given a De Brujin index and an environment it returns the corresponding name of the variable.
-    getLocalName :: Int -> a -> T.Text
+    getLocalName :: Int         -- ^ The De Brujin index.
+                 -> a           -- ^ The given environment.
+                 -> Maybe T.Text
 
 -- | The instance of @HasLocals@ for a simple list of @LocalBind@s.
 instance HasLocals [LocalBind] where
     insertIntoLocals var list = (var, NameBinding) : list
     getLocalIndex var list = elemIndex var (fst <$> list)
-    getLocalName ind list = fst $ list !! ind
+    getLocalName ind list = (fst <$> list) `getAt` ind
+      where
+        -- | Safe version of '(!!)'.
+        getAt :: [a] -> Int -> Maybe a
+        getAt [] _ = Nothing
+        getAt (x:xs) n
+            | n < 0     = Nothing
+            | n == 0    = Just x
+            | otherwise = xs `getAt` (n-1)
   
 -- | The instance of @HasLocals@ for an environment containing local bindings.
 instance HasLocals Env where
@@ -116,14 +127,15 @@ class HasGlobals a where
 instance HasGlobals [GlobalBind] where
     insertIntoGlobals (var, expr) list = (var, NameBinding, expr) : list
     getGlobalTerm var list = go list 
-        where
-            go :: [GlobalBind] -> Maybe Term
-            go [] = Nothing
-            go ((v, _, t):xs)
-                | v == var  = Just t
-                | otherwise = go xs
+      where
+        go :: [GlobalBind] -> Maybe Term
+        go [] = Nothing
+        go ((v, _, t):xs)
+            | v == var  = Just t
+            | otherwise = go xs
 
 -- | The instance of @HasGlobal@ for an environment containing global bindings.
 instance HasGlobals Env where
     insertIntoGlobals pair env = env { globals = insertIntoGlobals pair $ globals env}
     getGlobalTerm var env = getGlobalTerm var $ globals env
+
