@@ -8,7 +8,6 @@ module Untyped.Eval
     ) where
 
 import Untyped.Syntax ( Term(..) )
-import Untyped.Environment ( insertIntoLocals )
 
 
 -- | Checks if a given term is a value: a term is a value if and only if it's a single lambda abstraction.

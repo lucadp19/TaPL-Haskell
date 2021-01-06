@@ -47,7 +47,6 @@ prettyEval = \case
         case getLocalName k env of
             Just name -> pure $ pretty name
             Nothing   -> error "This cannot happen"
-        pure . pretty $ getLocalName k env
     Lam name body -> (lamText name <+>)
         <$> local (insertIntoLocals name) (prettyEval body)
     App t1 t2 -> (<+>) <$> appParens t1 <*> appParens t2

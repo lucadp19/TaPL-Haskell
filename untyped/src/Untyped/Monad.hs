@@ -5,7 +5,6 @@ module Untyped.Monad
       Eval(..)
     ) where
 
-import qualified Data.Text as T
 import Untyped.Environment ( Env )
 import Control.Monad.Reader
 import System.Console.Haskeline ( MonadException )

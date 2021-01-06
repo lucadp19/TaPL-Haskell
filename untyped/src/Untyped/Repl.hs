@@ -11,22 +11,19 @@ import qualified Data.Text as T
 import Untyped.Syntax ( Term )
 import Untyped.Parser ( parseTerm, parseLet )
 import Untyped.Eval ( eval, step )
-import Untyped.Environment ( Env, emptyEnv, insertIntoGlobals )
-import Untyped.Pretty 
-import Untyped.Monad
+import Untyped.Environment ( emptyEnv, insertIntoGlobals )
+import Untyped.Pretty
+    ( evalArrow, stepArrow, lastStepArrow, prettyEval ) 
+import Untyped.Monad ( Eval(runEval) )
 
-import Data.Text.Prettyprint.Doc
-
-import Text.Megaparsec ( runParserT, ParseErrorBundle, errorBundlePretty )
-import Data.Void ( Void )
-import Data.Maybe ( fromMaybe )
-
-import Data.Char ( isSpace )
+import Data.Text.Prettyprint.Doc ( (<+>), indent, Doc )
 import Data.List as List ( isPrefixOf )
-import System.Console.Haskeline
+
 import Control.Monad.Reader
-import Control.Monad.Trans.Class ( lift ) 
-import Control.Monad.IO.Class ( liftIO )
+
+import Text.Megaparsec ( runParserT,  errorBundlePretty )
+
+import System.Console.Haskeline
 
 -- | The Read-Eval-Print-Loop of the Untyped language.
 repl :: IO ()

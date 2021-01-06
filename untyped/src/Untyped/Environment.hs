@@ -1,5 +1,4 @@
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE LambdaCase #-}
 module Untyped.Environment 
     ( -- * Env type
       Env
@@ -15,7 +14,6 @@ module Untyped.Environment
     ) where
 
 import qualified Data.Text as T
-import Control.Monad.Reader
 import Data.List ( elemIndex )
 
 import Untyped.Syntax ( Term )
