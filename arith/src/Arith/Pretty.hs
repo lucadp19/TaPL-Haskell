@@ -1,14 +1,14 @@
-{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
+
 module Arith.Pretty 
-    ( prettyprint
+    ( -- * Helpers
+      prettyprint
     , text
     , evalArrow
     , stepArrow
     , lastStepArrow
     ) where
 
-import Arith.Syntax
 import qualified Data.Text as T
 import Data.Text.Prettyprint.Doc
 
@@ -31,18 +31,3 @@ lastStepArrow = text (" ↛ " :: T.Text)
 -- | Alias for prettifying and then printing something.
 prettyprint :: Pretty a => a -> IO ()  
 prettyprint = print . pretty
-
--- | The Pretty Term instance.
-instance Pretty Term where
-    pretty = \case
-        LitTrue -> pretty True
-        LitFalse -> pretty False
-        LitZero -> pretty (0 :: Int)
-        Succ t -> text "succ" <+> parens (pretty t)
-        Prec t -> text "prec" <+> parens (pretty t)
-        IsZero t -> text "isZero?" <+> parens (pretty t)
-        IfThenElse cond e1 e2 -> 
-            text "if" <+> align 
-            ( sep [ parens (pretty cond)
-                  , text "then" <+> parens (pretty e1)
-                  , text "else" <+> parens (pretty e2) ] )

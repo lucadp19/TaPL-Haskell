@@ -3,10 +3,11 @@ module Arith.Eval
     , eval
     ) where
 
-import Arith.Syntax
-
--- | Returns whether a term is numeric or not.
--- A term is numeric if it's zero or the successor of a numeric term.
+import Arith.Syntax ( Term(..) )
+{- |
+Returns whether a term is numeric or not.
+A term is numeric if it's zero or the successor of a numeric term.
+-}    
 isNumeric :: Term -> Bool
 isNumeric LitZero   = True
 isNumeric (Succ a)  = isNumeric a

@@ -1,16 +1,18 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Arith.Parser 
-    ( parseTerm
-    , parseExpr
+    ( -- * Main parser
+      parseTerm
     ) where
 
-import Arith.Syntax
+import Arith.Syntax ( Term(..) )
 
 import qualified Data.Text as T
+import Data.Void ( Void )
+
 import Text.Megaparsec
-import Text.Megaparsec.Char
+import Text.Megaparsec.Char ( space1 )
 import qualified Text.Megaparsec.Char.Lexer as L
-import Data.Void
+
 
 type Parser = Parsec Void T.Text
 

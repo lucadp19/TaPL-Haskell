@@ -1,28 +1,27 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Arith.Repl
-    ( repl
+    ( -- * REPL
+      repl
     , arith
     ) where
 
 import qualified Data.Text as T
 
-import Arith.Syntax
-import Arith.Parser
-import Arith.Eval
-import Arith.Pretty 
+import Arith.Syntax ( Term(..) )
+import Arith.Parser ( parseTerm )
+import Arith.Eval ( step, eval )
+import Arith.Pretty ( evalArrow, stepArrow, lastStepArrow ) 
 
 import Data.Text.Prettyprint.Doc
 
 import Text.Megaparsec ( parse, ParseErrorBundle, errorBundlePretty )
-import Data.Void
-import Data.Maybe ( fromMaybe )
+import Data.Void ( Void )
+import Data.List as List ( isPrefixOf )
 
-import Data.Char ( isSpace )
-import Data.List as List
 import System.Console.Haskeline
-import Control.Monad.Trans.Class ( lift ) 
-import Control.Monad.IO.Class ( liftIO )
+import Control.Monad.Trans.Class ( lift )
+
 
 -- | The Read-Eval-Print-Loop of the Arith language.
 repl :: IO ()
@@ -66,14 +65,13 @@ allStCmd term = case parseLine term of
     Right expr -> do
         print $ indent 4 $ pretty expr -- The first line is indented because the following ones have arrows.
         printAllSteps expr
-
-    where
-        printAllSteps :: Term -> IO ()
-        printAllSteps t = case step t of
-            Nothing -> print lastStepArrow
-            Just t' -> do
-                print $ stepArrow <+> pretty t'
-                printAllSteps t'
+  where
+    printAllSteps :: Term -> IO ()
+    printAllSteps t = case step t of
+        Nothing -> print lastStepArrow
+        Just t' -> do
+            print $ stepArrow <+> pretty t'
+            printAllSteps t'
 
 -- | The command for stepping an expression into another and pretty-printing its result.
 stepCmd :: T.Text -> IO ()
@@ -85,8 +83,6 @@ stepCmd term = case parseLine term of
 
 -- | The command for fully evaluating an expression and pretty-printing its result.
 evalCmd :: T.Text -> IO ()
-evalCmd term = case parse parseTerm "<stdin>" term of
+evalCmd term = case parseLine term of
     Left err   -> putStr $ errorBundlePretty err
     Right expr -> print $ evalArrow <+> pretty (eval expr)
-
-
