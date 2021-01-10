@@ -67,10 +67,9 @@ allStCmd :: T.Text -> Eval ()
 allStCmd term = runParserT parseTerm "untyped" term >>= \case
     Left err   -> liftIO . putStr . errorBundlePretty $ err
     Right expr -> do
-        (liftIO :: IO () -> Eval ()) 
-            . print 
-            . indent 4 
-            <$> prettyEval expr -- The first line is indented because the following ones have arrows.
+        firstExpr <- prettyEval expr
+        -- The first line is indented because the following ones have arrows.
+        liftIO . print . indent 4 $ firstExpr
         printAllSteps expr
   where
     -- | Recursive helper function to print all steps of the evaluation.

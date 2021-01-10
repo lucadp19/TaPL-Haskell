@@ -41,6 +41,8 @@ executables:
     - -rtsopts
     - -with-rtsopts=-N
     - -Wall
+    default-extensions:
+    - OverloadedStrings
     dependencies:
     - untyped
 
@@ -53,5 +55,7 @@ tests:
     - -rtsopts
     - -with-rtsopts=-N
     - -Wall
+    default-extensions:
+    - OverloadedStrings
     dependencies:
     - untyped
