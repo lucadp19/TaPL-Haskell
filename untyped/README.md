@@ -1,6 +1,6 @@
-# Full Untyped Lambda Calculus
+# Untyped Lambda Calculus
 
-`FullUntyped` is an implementation of the pure Untyped Lambda Calculus: as such, it only implements lambda abstractions and applications.
+`untyped` is an implementation of the pure Untyped Lambda Calculus: as such, it only implements lambda abstractions and applications.
 
 The full BNF grammar for `untyped` is the following:
 
@@ -18,3 +18,9 @@ Provided you've installed `stack`, `untyped` implements a REPL (Read-Eval-Print-
 
 - `:q` quits the REPL.
 To open the `Untyped` REPL using `stack` you can use the command `stack exec untyped-exe`. To open the documentation use the command `stack haddock --open untyped` and `stack` will automatically open the Haddock files on your browser.
+
+## Implementation details
+
+Following the choices made in Types and Programming Languages, the `untyped` language uses a call-by-value interpreter: only the outmost lambda ever gets reduced, even if the body may be reduced before applying beta-substitution. 
+
+Likewise, the interpreter actually performs the beta-substitutions instead of using a local environment: the `Eval` monad is used to keep track of local and global variables during parsing and pretty-printing, but not during the evaluation.
