@@ -22,4 +22,5 @@ Provided you've installed `stack`, `Arith` implements a simple but powerful REPL
 - `:a` fully evaluates an expression but prints all the steps;
 - `:e` fully evaluates an expression and prints the final result (writing `:e` is the same as writing directly the expression);
 - `:q` quits the REPL.
+
 To open the `Arith` REPL using `stack` you can use the command `stack exec arith-exe`. To open the documentation use the command `stack haddock --open arith` and `stack` will automatically open the Haddock files on your browser.
