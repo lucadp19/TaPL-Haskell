@@ -1,5 +1,11 @@
 {-# LANGUAGE GeneralisedNewtypeDeriving #-}
 
+{- |
+The "Untyped.Monad" module defines the 'Eval' monad,
+used to implement the lexical environment in which
+terms are evaluated.
+-}
+
 module Untyped.Monad 
     ( -- * The monad
       Eval(..)

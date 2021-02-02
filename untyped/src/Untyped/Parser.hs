@@ -1,4 +1,11 @@
 {-# LANGUAGE OverloadedStrings #-}
+
+{-|
+The "Untyped.Parser" module contains the several parsers used to implement the
+Untyped Lambda Calculus. It exposes two parsers: one for terms that need to be evaluated
+(called @'parseTerm'@) and one for global let bindings (called @'parseLet'@).
+-}
+
 module Untyped.Parser 
     ( -- * Language parsers
       parseTerm

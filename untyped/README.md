@@ -17,6 +17,4 @@ Provided you've installed `stack`, `untyped` implements a REPL (Read-Eval-Print-
         :l <name> = <expr>
 
 - `:q` quits the REPL.
-
-
-    
+To open the `Untyped` REPL using `stack` you can use the command `stack exec untyped-exe`. To open the documentation use the command `stack haddock --open untyped` and `stack` will automatically open the Haddock files on your browser.

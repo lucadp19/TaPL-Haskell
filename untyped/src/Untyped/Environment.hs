@@ -1,4 +1,12 @@
 {-# LANGUAGE FlexibleInstances #-}
+
+{-
+The "Untyped.Environment" module contains the environment used
+by this implementation of the Untyped Lambda Calculus.
+In particular it contains local binding and global binding,
+each with their auxiliary functions.
+-}
+
 module Untyped.Environment 
     ( -- * Env type
       Env
@@ -136,4 +144,3 @@ instance HasGlobals [GlobalBind] where
 instance HasGlobals Env where
     insertIntoGlobals pair env = env { globals = insertIntoGlobals pair $ globals env}
     getGlobalTerm var env = getGlobalTerm var $ globals env
-

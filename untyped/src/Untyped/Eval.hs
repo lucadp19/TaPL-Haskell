@@ -1,4 +1,11 @@
 {-# LANGUAGE LambdaCase #-}
+
+{- |
+The "Untyped.Eval" module defines two evaluating functions:
+the 'step' evaluator performs a single evaluation step, 
+whereas the 'eval' function fully evaluates the expression.
+-}
+
 module Untyped.Eval 
     ( -- * Evaluators
       -- ** Single step
@@ -16,7 +23,7 @@ isValue = \case
     Lam _ _ -> True
     _       -> False
 
--- | The shifting function: given an @Int@ and a @Term@ the function modifies the term shifting it into the right context.
+-- | The shifting function: given an @'Int'@ and a @'Term'@ the function modifies the term shifting it into the right context.
 shift :: Int -> Term -> Term
 shift d = go 0
   where 
@@ -36,12 +43,11 @@ subst j s = go 0
         Lam name t -> Lam name $ go (c+1) t
         App t1 t2  -> App (go c t1) (go c t2) 
 
--- | The beta-reduction function: substitutes a @Term@ into the body of a lambda abstraction.
+-- | The beta-reduction function: substitutes a @'Term'@ into the body of a lambda abstraction.
 substTop :: Term    -- ^ The term to be substituted into the body of the lambda abstraction.
          -> Term    -- ^ The body of the lambda abstraction.
          -> Term
 substTop s t = shift (-1) $ subst 0 (shift 1 s) t
-
 
 {- | 
 Steps an expression into another expression. 

@@ -1,9 +1,13 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE LambdaCase #-}
 
+{- |
+The "Untyped.Repl" module defines the Read-Eval-Print-Loop
+used by this implementation of the Untyped Lambda Calculus.
+-}
+
 module Untyped.Repl
     ( repl
-    , untyped
     ) where
 
 import qualified Data.Text as T
@@ -13,7 +17,7 @@ import Untyped.Parser ( parseTerm, parseLet )
 import Untyped.Eval ( eval, step )
 import Untyped.Environment ( emptyEnv, insertIntoGlobals )
 import Untyped.Pretty
-    ( evalArrow, stepArrow, lastStepArrow, prettyEval ) 
+    ( evalArrow, stepArrow, lastStepArrow, prettyTerm ) 
 import Untyped.Monad ( Eval(runEval) )
 
 import Data.Text.Prettyprint.Doc ( (<+>), indent, Doc )
@@ -31,10 +35,6 @@ repl = run (runInputT defaultSettings loop)
   where 
     run :: Eval a -> IO a
     run t = runReaderT (runEval t) emptyEnv
-
--- | The Read-Eval-Print-Loop of the Untyped language.
-untyped :: IO ()
-untyped = repl
 
 -- | The main loop of the Untyped REPL.
 loop :: InputT Eval ()
@@ -58,54 +58,67 @@ removeCmd = T.dropWhile (== ' ') . T.dropWhile (/= ' ')
 
 -- | The command for parsing and printing the result.
 parseCmd :: T.Text -> Eval ()
-parseCmd text = do
-    term <- runParserT parseTerm "untyped" text
-    liftIO $ print term
+parseCmd = parseExec $ liftIO . print
 
 -- | THe command for showing all the steps in the evaluation of a term.
 allStCmd :: T.Text -> Eval ()
-allStCmd term = runParserT parseTerm "untyped" term >>= \case
-    Left err   -> liftIO . putStr . errorBundlePretty $ err
-    Right expr -> do
-        firstExpr <- prettyEval expr
-        -- The first line is indented because the following ones have arrows.
-        liftIO . print . indent 4 $ firstExpr
-        printAllSteps expr
+allStCmd = parseExec allStepsPrint
   where
+    allStepsPrint :: Term -> Eval ()
+    allStepsPrint term = do
+        firstExpr <- prettyTerm term
+        -- The first line is indented because the following ones have arrows.
+        liftIO $ print $ indent 4 firstExpr
+        recPrintSteps term
     -- | Recursive helper function to print all steps of the evaluation.
-    printAllSteps :: Term -> Eval ()
-    printAllSteps t = case step t of
+    recPrintSteps :: Term -> Eval ()
+    recPrintSteps t = case step t of
         Nothing -> liftIO $ print lastStepArrow
         Just t' -> do
-            toPrint <- (stepArrow <+>) <$> prettyEval t'
+            toPrint <- (stepArrow <+>) <$> prettyTerm t'
             liftIO $ print toPrint
-            printAllSteps t'
+            recPrintSteps t'
 
 -- | The command for stepping an expression into another and pretty-printing its result.
 stepCmd :: T.Text -> Eval ()
-stepCmd term = runParserT parseTerm "untyped" term >>= \case
-    Left err -> liftIO . putStr . errorBundlePretty $ err
-    Right expr -> do
-        toPrint <- prettyStep $ step expr
-        liftIO $ print toPrint
+stepCmd = parseExec stepPrint
   where
+    stepPrint term = do
+        toPrint <- prettyStep $ step term
+        liftIO $ print toPrint
     prettyStep :: Maybe Term -> Eval (Doc ann)
     prettyStep = \case
-        Just t' -> (stepArrow <+> ) <$> prettyEval t'
+        Just t' -> (stepArrow <+> ) <$> prettyTerm t'
         Nothing -> pure lastStepArrow
 
 -- | The command to add a new global binding into the interpreter.
 letCmd :: T.Text -> InputT Eval ()
 letCmd term = lift (runParserT parseLet "untyped" term) >>= \case
-    Left err -> liftIO . putStr . errorBundlePretty $ err
-    Right p@(name, expr) -> lift $
+    Left err -> liftIO $ putStr $ errorBundlePretty err
+    Right (name, expr) -> lift $
         let runLoop = runInputT defaultSettings loop in
-            local (insertIntoGlobals p) runLoop
+            local (insertIntoGlobals (name, expr)) runLoop
 
 -- | The command for fully evaluating an expression and pretty-printing its result.
 evalCmd :: T.Text -> Eval ()
-evalCmd term = runParserT parseTerm "untyped" term >>= \case
-    Left err -> liftIO . putStr . errorBundlePretty $ err
-    Right expr -> do
-        toPrint <- (evalArrow <+> ) <$> prettyEval (eval expr)
+evalCmd = parseExec evalPrint
+  where
+    evalPrint :: Term -> Eval ()
+    evalPrint term = do
+        toPrint <- (evalArrow <+> ) <$> prettyTerm (eval term)
         liftIO $ print toPrint
+
+{- |
+The @parseExec@ function is used to parse a 'T.Text' into a 'Term' 
+and then either print the parsing error or execute a command on the
+'Term' obtained by the parsing step. 
+
+The given command returns a type error or a result, which in turn is pretty
+printed with the help of a printer function.
+-}
+parseExec :: (Term -> Eval ())   -- ^ The command to be executed on the parsed 'Term'.
+          -> T.Text              -- ^ The initial text to be parsed.
+          -> Eval ()
+parseExec cmd txt = runParserT parseTerm "untyped" txt >>= \case
+    Left parseErr -> liftIO $ putStr $ errorBundlePretty parseErr
+    Right term    -> cmd term
