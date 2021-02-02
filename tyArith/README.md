@@ -24,4 +24,5 @@ Provided you've installed `stack`, `Arith` implements a simple REPL (Read-Eval-P
 - `:t` calculates the type of an expression;
 - `:e` fully evaluates an expression and prints the final result (writing `:e` is the same as writing directly the expression);
 - `:q` quits the REPL.
+
 To open the `TyArith` REPL using `stack` you can use the command `stack exec tyArith-exe`. To open the documentation use the command `stack haddock --open tyArith` and `stack` will automatically open the Haddock files on your browser.
