@@ -1,9 +1,19 @@
+{- |
+The "Arith.Eval" module defines two evaluating functions:
+the 'step' evaluator performs a single evaluation step, 
+whereas the 'eval' function fully evaluates the expression.
+-}
+
 module Arith.Eval 
-    ( step
+    ( -- * Evaluators
+      -- ** Single step
+      step
+      -- ** Multistep
     , eval
     ) where
 
 import Arith.Syntax ( Term(..) )
+
 {- |
 Returns whether a term is numeric or not.
 A term is numeric if it's zero or the successor of a numeric term.

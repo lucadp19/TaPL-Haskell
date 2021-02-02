@@ -1,33 +1,43 @@
 {-# LANGUAGE OverloadedStrings #-}
 
+{- |
+The "Arith.Pretty" module contains some helper functions for pretty-printing
+terms and REPL results.
+-}
+
 module Arith.Pretty 
     ( -- * Helpers
-      prettyprint
-    , text
+      text
+      -- ** Arrows
     , evalArrow
     , stepArrow
     , lastStepArrow
     ) where
 
 import qualified Data.Text as T
-import Data.Text.Prettyprint.Doc
+import Data.Text.Prettyprint.Doc ( Doc, Pretty(pretty) )
 
 -- | Helper function for prettifying Text.
 text :: T.Text -> Doc ann
 text = pretty
 
--- | The arrow representing multistep evaluation.
+{- | 
+The arrow representing multistep evaluation:
+it corresponds to Unicode character 21D2 (⇒).
+-}
 evalArrow :: Doc ann
-evalArrow = text (" ⇒ " :: T.Text)
+evalArrow = text " ⇒ "
 
--- | The arrow representing a single evaluation step.
+{- |
+The arrow representing a single evaluation step:
+it corresponds to Unicode character 2192 (→).
+-}
 stepArrow :: Doc ann
-stepArrow = text (" ⟶ " :: T.Text)
+stepArrow = text " ⟶ "
 
--- | The arrow representing a value or stuck term.
+{- | 
+The arrow representing a value or stuck term: 
+it corresponds to Unicode character 219B (↛).
+-}
 lastStepArrow :: Doc ann
-lastStepArrow = text (" ↛ " :: T.Text)
-
--- | Alias for prettifying and then printing something.
-prettyprint :: Pretty a => a -> IO ()  
-prettyprint = print . pretty
+lastStepArrow = text " ↛ "

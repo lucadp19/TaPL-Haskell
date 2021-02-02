@@ -1,9 +1,13 @@
 {-# LANGUAGE OverloadedStrings #-}
 
+{- |
+The "Arith.Repl" module defines the Read-Eval-Print-Loop
+used by this implementation of the Arith language.
+-}
+
 module Arith.Repl
     ( -- * REPL
       repl
-    , arith
     ) where
 
 import qualified Data.Text as T
@@ -26,10 +30,6 @@ import Control.Monad.Trans.Class ( lift )
 -- | The Read-Eval-Print-Loop of the Arith language.
 repl :: IO ()
 repl = runInputT defaultSettings loop
-
--- | The Read-Eval-Print-Loop of the Arith language.
-arith :: IO ()
-arith = repl
 
 -- | The main loop of the Arith REPL.
 loop :: InputT IO ()
@@ -56,33 +56,52 @@ parseLine = parse parseTerm "arith"
 
 -- | The command for parsing and printing the result.
 parseCmd :: T.Text -> IO ()
-parseCmd = print . parseLine
+parseCmd = parseExec print
 
 -- | THe command for showing all the steps in the evaluation of a term.
 allStCmd :: T.Text -> IO ()
-allStCmd term = case parseLine term of
-    Left err   -> putStr $ errorBundlePretty err
-    Right expr -> do
-        print $ indent 4 $ pretty expr -- The first line is indented because the following ones have arrows.
-        printAllSteps expr
+allStCmd = parseExec allStepsPrint
   where
-    printAllSteps :: Term -> IO ()
-    printAllSteps t = case step t of
+    -- | Helper command for 'allStCmd'.j
+    allStepsPrint :: Term -> IO ()
+    allStepsPrint term = do
+        -- The first line is indented because the following ones have arrows.j
+        print $ indent 4 $ pretty term
+        recPrintSteps term
+    -- | Recursive helper function to print all steps of the evaluation.
+    recPrintSteps :: Term -> IO ()
+    recPrintSteps t = case step t of
         Nothing -> print lastStepArrow
         Just t' -> do
             print $ stepArrow <+> pretty t'
-            printAllSteps t'
+            recPrintSteps t'
 
 -- | The command for stepping an expression into another and pretty-printing its result.
 stepCmd :: T.Text -> IO ()
-stepCmd term = case parseLine term of
-    Left err   -> putStr $ errorBundlePretty err
-    Right t -> print $ case step t of
+stepCmd = parseExec stepPrint
+  where
+    -- | Helper command for 'stepCmd'.
+    stepPrint :: Term -> IO ()
+    stepPrint t = print $ case step t of
         Nothing -> lastStepArrow                -- The expression is either a value or stuck.
         Just t' -> stepArrow <+> pretty t'
 
 -- | The command for fully evaluating an expression and pretty-printing its result.
 evalCmd :: T.Text -> IO ()
-evalCmd term = case parseLine term of
-    Left err   -> putStr $ errorBundlePretty err
-    Right expr -> print $ evalArrow <+> pretty (eval expr)
+evalCmd = parseExec evalPrint
+  where
+    -- | Helper command for 'evalCmd'.
+    evalPrint :: Term -> IO ()
+    evalPrint term = print $ evalArrow <+> pretty (eval term)
+
+{- |
+The @parseExec@ function is used to parse a 'T.Text' into a 'Term' 
+and then either print the parsing error or execute a command on the
+'Term' obtained by the parsing step. 
+-}
+parseExec :: (Term -> IO ())
+          -> T.Text
+          -> IO ()
+parseExec cmd txt = case parseLine txt of
+    Left parseErr -> putStr $ errorBundlePretty parseErr
+    Right term    -> cmd term

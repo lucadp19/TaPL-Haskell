@@ -8,7 +8,6 @@ module Arith.Syntax
 
 import Arith.Pretty ( text )
 import Data.Text.Prettyprint.Doc
-    ( (<+>), align, sep, parens, Pretty(pretty) )
 
 
 -- | A term of the Arith language.
@@ -28,11 +27,17 @@ instance Pretty Term where
         LitTrue -> pretty True
         LitFalse -> pretty False
         LitZero -> pretty (0 :: Int)
-        Succ t -> text "succ" <+> parens (pretty t)
-        Prec t -> text "prec" <+> parens (pretty t)
-        IsZero t -> text "isZero?" <+> parens (pretty t)
-        IfThenElse cond e1 e2 -> 
+        Succ t -> text "succ" <+> termParens t
+        Prec t -> text "prec" <+> termParens t
+        IsZero t -> text "isZero?" <+> termParens t 
+        IfThenElse cond thenT elseT -> 
             text "if" <+> align 
-            ( sep [ parens (pretty cond)
-                  , text "then" <+> parens (pretty e1)
-                  , text "else" <+> parens (pretty e2) ] )
+            ( sep [ termParens cond
+                  , text "then" <+> termParens thenT
+                  , text "else" <+> termParens elseT ] )
+      where
+        termParens :: Term -> Doc ann
+        termParens t 
+            | t `elem` [LitTrue, LitFalse, LitZero] = 
+                pretty t
+            | otherwise = parens $ pretty t

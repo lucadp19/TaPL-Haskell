@@ -1,4 +1,9 @@
 {-# LANGUAGE OverloadedStrings #-}
+
+{- |
+The "Arith.Parser" module contains the parsers used to implement the
+Arith language. 
+-}
 module Arith.Parser 
     ( -- * Main parser
       parseTerm
@@ -13,7 +18,7 @@ import Text.Megaparsec
 import Text.Megaparsec.Char ( space1 )
 import qualified Text.Megaparsec.Char.Lexer as L
 
-
+-- | The monadic parser.
 type Parser = Parsec Void T.Text
 
 -- | The whitespace lexer.
