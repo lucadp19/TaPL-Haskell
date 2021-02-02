@@ -5,6 +5,7 @@
 Every language implementation will be completed by a parser and a REPL (Read-Eval-Print-Loop) to toy with the given language.
 
 At the moment I've implemented:
+
     - the simplest language, called `Arith` because it only supports a handful of arithmetic operations;
     - the pure untyped lambda calculus, called `Untyped`;
     - the full untyped lambda calculus, called `FullUntyped`;
