@@ -22,13 +22,14 @@ import SimplyTyped.Monad ( Eval(runEval) )
 import SimplyTyped.Check ( typeof, (<?>), TypeErr )
 import SimplyTyped.Types ( Typ )
 
-import Data.Text.Prettyprint.Doc ( (<+>), indent, Doc, pretty )
+import Data.Text.Prettyprint.Doc ( (<+>), indent, pretty )
 import Data.List as List ( isPrefixOf )
+import Data.Void ( Void )
 
 import Control.Monad.Reader
-import Control.Monad.Except ( runExceptT )
+import Control.Monad.Except ( ExceptT, runExceptT )
 
-import Text.Megaparsec ( runParserT,  errorBundlePretty )
+import Text.Megaparsec ( runParserT, errorBundlePretty, ParseErrorBundle )
 
 import System.Console.Haskeline
 
@@ -62,72 +63,88 @@ removeCmd = T.dropWhile (== ' ') . T.dropWhile (/= ' ')
 
 -- | The command for parsing and printing the result.
 parseCmd :: T.Text -> Eval ()
-parseCmd text = do
-    term <- runParserT parseTerm "simplytyp" text
-    liftIO $ print term
+parseCmd = parseExec pure (liftIO . print)
 
 -- | THe command for showing all the steps in the evaluation of a term.
 allStCmd :: T.Text -> Eval ()
-allStCmd term = runParserT parseTerm "simplytyp" term >>= \case
-    Left err   -> liftIO . putStr . errorBundlePretty $ err
-    Right expr -> do
-        firstExpr <- prettyTerm expr
-        -- The first line is indented because the following ones have arrows.
-        liftIO . print . indent 4 $ firstExpr 
-        printAllSteps expr
+allStCmd = parseExec (id <?>) allStepsPrint 
   where
+    -- | Prints the complete result of the evaluation.
+    allStepsPrint :: Term -> Eval ()
+    allStepsPrint term = do
+        firstExpr <- prettyTerm term
+        -- The first line is indented because the following ones have arrows.
+        liftIO $ print $ indent 4 firstExpr
+        recPrintSteps term
     -- | Recursive helper function to print all steps of the evaluation.
-    printAllSteps :: Term -> Eval ()
-    printAllSteps t = case step t of
+    recPrintSteps :: Term -> Eval ()
+    recPrintSteps t = case step t of
         Nothing -> liftIO $ print lastStepArrow
         Just t' -> do
             toPrint <- (stepArrow <+>) <$> prettyTerm t'
             liftIO $ print toPrint
-            printAllSteps t'
+            recPrintSteps t'
 
 -- | The command for stepping an expression into another and pretty-printing its result.
 stepCmd :: T.Text -> Eval ()
-stepCmd term = runParserT parseTerm "simplytyp" term >>= \case
-    Left err -> liftIO . putStr . errorBundlePretty $ err
-    Right expr -> do
-        toPrint <- prettyStep $ step expr
-        liftIO $ print toPrint
+stepCmd = parseExec (step <?>) stepPrint
   where
-    prettyStep :: Maybe Term -> Eval (Doc ann)
-    prettyStep = \case
-        Just t' -> (stepArrow <+>) <$> prettyTerm t'
-        Nothing -> pure lastStepArrow
+    -- | Helper print function.
+    stepPrint :: Maybe Term -> Eval ()
+    stepPrint t = case t of
+        Just t' -> do
+            toPrint <- (stepArrow <+>) <$> prettyTerm t'
+            liftIO $ print toPrint            
+        Nothing -> liftIO $ print lastStepArrow
 
 -- | The command to add a new global binding into the interpreter.
 letCmd :: T.Text -> InputT Eval ()
-letCmd term = lift (runParserT parseLet "simplytyp" term) >>= \case
-    Left err -> liftIO . putStr . errorBundlePretty $ err
-    Right (name, expr) -> lift $ runExceptT (typeof expr) >>= \case 
-        Left tyErr -> liftIO $ print $ pretty tyErr
-        Right ty -> let runLoop = runInputT defaultSettings loop in
-            local (insertIntoGlobals (name, ty, expr)) runLoop
+letCmd term = lift (runParserT parseLet "stlc" term) >>= \case
+    Left err -> printParseErr err >> loop
+    Right (name, expr) -> lift (runExceptT $ typeof expr) >>= \case 
+        Left tyErr -> printTypeErr tyErr >> loop
+        Right ty -> mapInputT (local $ insertIntoGlobals (name, ty, expr)) loop
+  where
+    printParseErr :: ParseErrorBundle T.Text Void -> InputT Eval ()
+    printParseErr = liftIO . putStr . errorBundlePretty
+    printTypeErr :: TypeErr -> InputT Eval ()
+    printTypeErr = liftIO . print . pretty
 
 -- | The command for fully evaluating an expression and pretty-printing its result.
 evalCmd :: T.Text -> Eval ()
-evalCmd term = runParserT parseTerm "simplytyp" term >>= \case
-    Left err -> liftIO . putStr . errorBundlePretty $ err
-    Right expr -> runExceptT (eval <?> expr) >>= printErrOrEval
+evalCmd = parseExec (eval <?>) evalPrint
   where
-    -- | Prints the type error or the evaluated expression.
-    printErrOrEval :: Either TypeErr Term -> Eval ()
-    printErrOrEval (Left typeErr) = liftIO $ print $ pretty typeErr
-    printErrOrEval (Right evalExpr) = do
-        toPrint <- (evalArrow <+>) <$> prettyTerm evalExpr
+    -- | Helper command for 'evalCmd'.
+    evalPrint :: Term -> Eval ()
+    evalPrint term = do
+        toPrint <- (evalArrow <+>) <$> prettyTerm term
         liftIO $ print toPrint
 
 -- | The command for calculating the type of an expression.
 typeCmd :: T.Text -> Eval ()
-typeCmd term = runParserT parseTerm "simplytyp" term >>= \case
-    Left err -> liftIO . putStr . errorBundlePretty $ err
-    Right expr -> runExceptT (typeof expr) >>= 
-        liftIO . print . prettyErrOrType
+typeCmd = parseExec typeof typePrint
   where
-    -- | Prettyfies the type error or the expression's type.
-    prettyErrOrType :: Either TypeErr Typ -> Doc ann
-    prettyErrOrType (Left typeErr) = pretty typeErr
-    prettyErrOrType (Right typ) = text " <expr> :" <+> pretty typ
+    -- | Helper command for 'typeCmd'.
+    typePrint :: Typ -> Eval ()
+    typePrint typ = liftIO $ print $ text " <expr> :" <+> pretty typ
+
+{- |
+The @parseExec@ function is used to parse a 'T.Text' into a 'Term' 
+and then either print the parsing error or execute a command on the
+'Term' obtained by the parsing step. 
+
+The given command returns a type error or a result, which in turn is pretty
+printed with the help of a printer function.
+-}
+parseExec :: (Term -> ExceptT TypeErr Eval a)   -- ^ The command to be executed on the parsed 'Term'.
+          -> (a -> Eval ())                     -- ^ Printer function.
+          -> T.Text                             -- ^ The initial text to be parsed.
+          -> Eval ()
+parseExec cmd printer txt = runParserT parseTerm "stlc" txt >>= \case
+    Left parseErr -> liftIO $ putStr $ errorBundlePretty parseErr
+    Right term    -> printTyErrOrExec term
+  where
+    printTyErrOrExec :: Term -> Eval ()
+    printTyErrOrExec term = runExceptT (cmd term) >>= \case
+        Left typeErr -> liftIO $ print $ pretty typeErr
+        Right value  -> printer value
