@@ -27,7 +27,7 @@ import System.Console.Haskeline
 
 -- | The Read-Eval-Print-Loop of the FullUntyped language.
 repl :: IO ()
-repl = run (runInputT defaultSettings loop)
+repl = run $ runInputT defaultSettings loop
   where 
     run :: Eval a -> IO a
     run t = runReaderT (runEval t) emptyEnv

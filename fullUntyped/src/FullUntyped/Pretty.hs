@@ -1,4 +1,5 @@
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module FullUntyped.Pretty 
@@ -13,7 +14,7 @@ module FullUntyped.Pretty
 
 import FullUntyped.Syntax ( Term(..) )
 import FullUntyped.Environment
-import FullUntyped.Monad ( Eval )
+    ( HasLocals(insertIntoLocals, getLocalName) )
 
 import qualified Data.Text as T
 import Data.Text.Prettyprint.Doc
@@ -40,7 +41,11 @@ lastStepArrow = text (" ↛ " :: T.Text)
 @prettyEval@ takes a @Term@ and returns a prettyfied version contained in an 
 environment based on the @Eval@ monad.
 -}
-prettyEval :: Term -> Eval (Doc ann)
+prettyEval :: forall m env ann.
+              ( MonadReader env m
+              , HasLocals env) 
+           => Term 
+           -> m (Doc ann)
 prettyEval = \case
     -- Boolean expressions
     LitTrue -> pure $ text "True"
@@ -68,12 +73,11 @@ prettyEval = \case
   where
     lamText :: T.Text -> Doc ann
     lamText name = text "λ" <> pretty name <> text "."
-
--- | Surrounds the prettyfied version of a term with parentheses.
-appParens :: Term -> Eval (Doc ann)
-appParens t = case t of
-    LitTrue -> prettyEval t
-    LitFalse -> prettyEval t
-    LitZero -> prettyEval t
-    Var _ -> prettyEval t
-    _     -> parens <$> prettyEval t
+    -- | Surrounds the prettyfied version of a term with parentheses.
+    appParens :: Term -> m (Doc ann)
+    appParens t = case t of
+        LitTrue -> prettyEval t
+        LitFalse -> prettyEval t
+        LitZero -> prettyEval t
+        Var _ -> prettyEval t
+        _     -> parens <$> prettyEval t
