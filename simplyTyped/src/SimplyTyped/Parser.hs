@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-{-|
+{- |
 The "SimplyTyped.Parser" module contains the several parsers used to implement the
 Simply Typed Lambda Calculus. It exposes two parsers: one for terms that need to be evaluated
 (called @'parseTerm'@) and one for global let bindings (called @'parseLet'@).
@@ -148,24 +148,26 @@ parseIf = do
     pure $ IfThenElse cond trueExpr falseExpr
 
 -- | Parses an expression without function applications.
-parseSingle :: Parser Term
-parseSingle = parens parseTerm
-          <|> parseLambda 
-          <|> try parseLocal
-          <|> try parseGlobal
-          <|> parseTrue
-          <|> parseFalse
-          <|> parseZero
-          <|> parseSucc
-          <|> parsePrec
-          <|> try parseIf
-          <|> parseIsZero
+parseSingleTerm :: Parser Term
+parseSingleTerm = 
+    parens parseTerm
+ <|> parseLambda 
+ <|> try parseLocal
+ <|> try parseGlobal
+ <|> parseTrue
+ <|> parseFalse
+ <|> parseZero
+ <|> parseSucc
+ <|> parsePrec
+ <|> try parseIf
+ <|> parseIsZero
 
 -- | Parses a series of function applications.
 parseApp :: Parser Term
-parseApp = do
-    apps <- some parseSingle
-    pure $ foldl1' App apps
+parseApp = makeExprParser parseSingleTerm operatorTable
+  where
+    operatorTable :: [[Operator Parser Term]]
+    operatorTable = [ [InfixL (App <$ symbol "")] ]
 
 -- | The parser for a SimplyTyped term.
 parseTerm :: Parser Term
