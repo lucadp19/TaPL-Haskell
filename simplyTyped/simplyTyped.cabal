@@ -6,12 +6,12 @@ cabal-version: 1.12
 
 name:           simplyTyped
 version:        0.1.0.0
-description:    Please see the README on GitHub at <https://github.com/githubuser/simplyTyped#readme>
-homepage:       https://github.com/githubuser/simplyTyped#readme
-bug-reports:    https://github.com/githubuser/simplyTyped/issues
-author:         Author name here
+description:    Please see the README on GitHub at <https://github.com/lucadp19/TaPL-Haskell/tree/master/simplyTyped#readme>
+homepage:       https://github.com/lucadp19/TaPL-Haskell#readme
+bug-reports:    https://github.com/lucadp19/TaPL-Haskell/issues
+author:         Luca De Paulis
 maintainer:     example@example.com
-copyright:      2021 Author name here
+copyright:      2021 Luca De Paulis
 license:        BSD3
 license-file:   LICENSE
 build-type:     Simple
@@ -21,7 +21,8 @@ extra-source-files:
 
 source-repository head
   type: git
-  location: https://github.com/githubuser/simplyTyped
+  location: https://github.com/lucadp19/TaPL-Haskell
+  subdir: simplyTyped
 
 library
   exposed-modules:
