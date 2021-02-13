@@ -35,10 +35,19 @@ data Typ
 
 -- | The instance of 'Pretty' for a @Typ@.
 instance Pretty Typ where
-    pretty = \case
-        Bool -> text "Bool"
-        Nat  -> text "Nat"
-        Arr t1 t2 -> pretty t1 <+> text "⟶ " <+> pretty t2
+    pretty = prettyWithPrec 1
       where
+        -- | Pretty-printing with precedence.
+        prettyWithPrec :: Int -> Typ -> Doc ann
+        prettyWithPrec _ Bool = text "Bool"
+        prettyWithPrec _ Nat  = text "Nat"
+        prettyWithPrec p (Arr t1 t2) = addParens (p > 1) $
+            prettyWithPrec 2 t1 <+> text "⟶ " <+> prettyWithPrec 1 t2
+        -- | Helper function to print 'T.Text' values.
         text :: T.Text -> Doc ann
         text = pretty
+        -- | Adds parentheses based on a boolean parameter.
+        addParens :: Bool -> Doc ann -> Doc ann
+        addParens True = parens
+        addParens False = id
+        
