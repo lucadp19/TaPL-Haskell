@@ -43,7 +43,7 @@ evalArrow = text (" ⇒ " :: T.Text)
 
 {- |
 The arrow representing a single evaluation step:
-it corresponds to Unicode character 27F6 (⟶).
+it corresponds to Unicode character 2192 (→).
 -}
 stepArrow :: Doc ann
 stepArrow = text (" ⟶ " :: T.Text)
