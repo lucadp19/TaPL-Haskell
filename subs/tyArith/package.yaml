@@ -1,0 +1,45 @@
+name:                typed-arith
+version:             0.2.0.0
+github:              "lucadp19/TaPL-Haskell"
+license:             GPL-3
+author:              "Luca De Paulis"
+copyright:           "2021 Luca De Paulis"
+
+extra-source-files:
+- README.md
+- ChangeLog.md
+
+# Metadata used when publishing your package
+# synopsis:            Short description of your package
+# category:            Web
+
+# To avoid duplicated efforts in documentation and dealing with the
+# complications of embedding Haddock markup inside cabal files, it is
+# common to point users to the README.md file.
+description:         Please see the README on GitHub at <https://github.com/githubuser/tyArith#readme>
+
+dependencies:
+- base >= 4.7 && < 5
+- text
+- megaparsec
+- transformers
+- mtl
+- prettyprinter
+- haskeline >= 0.8.1.1
+
+library:
+  source-dirs: src
+
+tests:
+  tyArith-test:
+    main:                Spec.hs
+    source-dirs:         test
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    - -Wall
+    default-extensions:
+    - OverloadedStrings
+    dependencies:
+    - tyArith

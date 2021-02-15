@@ -55,6 +55,12 @@ executables:
     dependencies:
     - TaPL
     - full-untyped
+  typed-arith:
+    main:                TyArith.hs
+    source-dirs:         app/TyArith
+    dependencies:
+    - TaPL
+    - typed-arith
 
 
 tests:
