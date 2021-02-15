@@ -12,7 +12,7 @@ bug-reports:    https://github.com/lucadp19/TaPL-Haskell/issues
 author:         Luca De Paulis
 maintainer:     example@example.com
 copyright:      2021 Luca De Paulis
-license:        GNU
+license:        GPL-3
 license-file:   LICENSE
 build-type:     Simple
 extra-source-files:
@@ -48,6 +48,20 @@ executable arith
       TaPL
     , arith
     , base >=4.7 && <5
+  default-language: Haskell2010
+
+executable full-untyped
+  main-is: FullUntyped.hs
+  other-modules:
+      Paths_TaPL
+  hs-source-dirs:
+      app/FullUntyped
+  default-extensions: OverloadedStrings LambdaCase
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N -Wall
+  build-depends:
+      TaPL
+    , base >=4.7 && <5
+    , full-untyped
   default-language: Haskell2010
 
 executable untyped

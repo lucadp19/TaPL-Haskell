@@ -10,6 +10,7 @@ description:    Please see the README on GitHub at <https://github.com/lucadp19/
 author:         Luca De Paulis
 maintainer:     Luca De Paulis
 copyright:      2020 Luca De Paulis
+license:        GPL-3
 build-type:     Simple
 extra-source-files:
     README.md

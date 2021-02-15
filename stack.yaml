@@ -33,7 +33,7 @@ packages:
 - .
 - subs/arith
 - subs/untyped
-# - subs/fullUntyped
+- subs/fullUntyped
 # - subs/simplyTyped
 # - subs/tyArith
 # Dependency packages to be pulled from upstream that are not in the resolver.

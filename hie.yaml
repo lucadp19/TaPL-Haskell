@@ -9,6 +9,12 @@ cradle:
     - path: "./app/Arith/Paths_TaPL.hs"
       component: "TaPL:exe:arith"
 
+    - path: "./app/FullUntyped/FullUntyped.hs"
+      component: "TaPL:exe:full-untyped"
+
+    - path: "./app/FullUntyped/Paths_TaPL.hs"
+      component: "TaPL:exe:full-untyped"
+
     - path: "./app/Untyped/Untyped.hs"
       component: "TaPL:exe:untyped"
 
@@ -23,6 +29,12 @@ cradle:
 
     - path: "subs/arith/test"
       component: "arith:test:arith-test"
+
+    - path: "subs/fullUntyped/src"
+      component: "full-untyped:lib"
+
+    - path: "subs/fullUntyped/test"
+      component: "full-untyped:test:fullUntyped-test"
 
     - path: "subs/untyped/src"
       component: "untyped:lib"
