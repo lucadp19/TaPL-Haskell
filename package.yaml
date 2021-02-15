@@ -1,0 +1,63 @@
+name:                TaPL
+version:             0.2.0.0
+github:              "lucadp19/TaPL-Haskell"
+license:             GNU
+author:              "Luca De Paulis"
+maintainer:          "example@example.com"
+copyright:           "2021 Luca De Paulis"
+
+extra-source-files:
+- README.md
+- ChangeLog.md
+
+# Metadata used when publishing your package
+# synopsis:            Short description of your package
+# category:            Web
+
+# To avoid duplicated efforts in documentation and dealing with the
+# complications of embedding Haddock markup inside cabal files, it is
+# common to point users to the README.md file.
+description:         Please see the README on GitHub at <https://github.com/lucadp19/TaPL-Haskell#readme>
+
+dependencies:
+- base >= 4.7 && < 5
+
+default-extensions:
+- OverloadedStrings
+- LambdaCase
+
+ghc-options:
+- -threaded
+- -rtsopts
+- -with-rtsopts=-N
+- -Wall
+
+library:
+  source-dirs: 
+  - src
+
+executables:
+  arith:
+    main:                Arith.hs
+    source-dirs:         app/Arith
+    dependencies:
+    - TaPL
+    - arith
+  untyped:
+    main:                Untyped.hs
+    source-dirs:         app/Untyped
+    dependencies:
+    - TaPL
+    - untyped
+
+
+tests:
+  TaPL-test:
+    main:                Spec.hs
+    source-dirs:         test
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - TaPL

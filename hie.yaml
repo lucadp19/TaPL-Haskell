@@ -1,0 +1,31 @@
+cradle:
+  stack:
+    - path: "./src"
+      component: "TaPL:lib"
+
+    - path: "./app/Arith/Arith.hs"
+      component: "TaPL:exe:arith"
+
+    - path: "./app/Arith/Paths_TaPL.hs"
+      component: "TaPL:exe:arith"
+
+    - path: "./app/Untyped/Untyped.hs"
+      component: "TaPL:exe:untyped"
+
+    - path: "./app/Untyped/Paths_TaPL.hs"
+      component: "TaPL:exe:untyped"
+
+    - path: "./test"
+      component: "TaPL:test:TaPL-test"
+
+    - path: "subs/arith/src"
+      component: "arith:lib"
+
+    - path: "subs/arith/test"
+      component: "arith:test:arith-test"
+
+    - path: "subs/untyped/src"
+      component: "untyped:lib"
+
+    - path: "subs/untyped/test"
+      component: "untyped:test:untyped-test"
