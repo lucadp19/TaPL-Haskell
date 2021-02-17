@@ -15,6 +15,18 @@ cradle:
     - path: "./app/FullUntyped/Paths_TaPL.hs"
       component: "TaPL:exe:full-untyped"
 
+    - path: "./app/SimplyTyped/SimplyTyped.hs"
+      component: "TaPL:exe:simply-typed"
+
+    - path: "./app/SimplyTyped/Paths_TaPL.hs"
+      component: "TaPL:exe:simply-typed"
+
+    - path: "./app/TyArith/TyArith.hs"
+      component: "TaPL:exe:typed-arith"
+
+    - path: "./app/TyArith/Paths_TaPL.hs"
+      component: "TaPL:exe:typed-arith"
+
     - path: "./app/Untyped/Untyped.hs"
       component: "TaPL:exe:untyped"
 
@@ -35,6 +47,18 @@ cradle:
 
     - path: "subs/fullUntyped/test"
       component: "full-untyped:test:fullUntyped-test"
+
+    - path: "subs/simplyTyped/src"
+      component: "simply-typed:lib"
+
+    - path: "subs/simplyTyped/test"
+      component: "simply-typed:test:simplyTyped-test"
+
+    - path: "subs/tyArith/src"
+      component: "typed-arith:lib"
+
+    - path: "subs/tyArith/test"
+      component: "typed-arith:test:tyArith-test"
 
     - path: "subs/untyped/src"
       component: "untyped:lib"

@@ -61,7 +61,12 @@ executables:
     dependencies:
     - TaPL
     - typed-arith
-
+  simply-typed:
+    main:                SimplyTyped.hs
+    source-dirs:         app/SimplyTyped
+    dependencies:
+    - TaPL
+    - simply-typed
 
 tests:
   TaPL-test:

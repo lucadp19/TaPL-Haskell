@@ -1,0 +1,76 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.34.3.
+--
+-- see: https://github.com/sol/hpack
+
+name:           simply-typed
+version:        0.2.0.0
+description:    Please see the README on GitHub at <https://github.com/lucadp19/TaPL-Haskell/tree/master/simplyTyped#readme>
+homepage:       https://github.com/lucadp19/TaPL-Haskell#readme
+bug-reports:    https://github.com/lucadp19/TaPL-Haskell/issues
+author:         Luca De Paulis
+maintainer:     Luca De Paulis
+copyright:      2021 Luca De Paulis
+license:        GPL-3
+build-type:     Simple
+extra-source-files:
+    README.md
+    ChangeLog.md
+
+source-repository head
+  type: git
+  location: https://github.com/lucadp19/TaPL-Haskell
+
+library
+  exposed-modules:
+      Language.SimplyTyped.Check
+      Language.SimplyTyped.Env
+      Language.SimplyTyped.Eval
+      Language.SimplyTyped.Monad
+      Language.SimplyTyped.Parser
+      Language.SimplyTyped.Pretty
+      Language.SimplyTyped.Repl
+      Language.SimplyTyped.Syntax
+      Language.SimplyTyped.Types
+  other-modules:
+      Paths_simply_typed
+  hs-source-dirs:
+      src
+  build-depends:
+      base >=4.7 && <5
+    , exceptions
+    , haskeline >=0.8.1.1
+    , megaparsec
+    , microlens
+    , microlens-mtl
+    , mtl
+    , parser-combinators
+    , prettyprinter
+    , text
+    , transformers
+  default-language: Haskell2010
+
+test-suite simplyTyped-test
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  other-modules:
+      Paths_simply_typed
+  hs-source-dirs:
+      test
+  default-extensions: OverloadedStrings
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N -Wall -haddock
+  build-depends:
+      base >=4.7 && <5
+    , exceptions
+    , haskeline >=0.8.1.1
+    , megaparsec
+    , microlens
+    , microlens-mtl
+    , mtl
+    , parser-combinators
+    , prettyprinter
+    , simply-typed
+    , text
+    , transformers
+  default-language: Haskell2010
