@@ -78,10 +78,12 @@ parseLambda = do
 
 -- | Parses a single variable or lambda abstraction.
 parseSingle :: Parser Term
-parseSingle = parens parseTerm
-          <|> parseLambda 
-          <|> try parseLocal
-          <|> try parseGlobal
+parseSingle = choice 
+    [ parens parseTerm
+    , parseLambda 
+    , try parseLocal
+    , try parseGlobal
+    ]
 
 -- | Parses a series of function applications.
 parseApp :: Parser Term
@@ -89,7 +91,7 @@ parseApp = do
     apps <- some parseSingle
     pure $ foldl1' App apps
 
--- | The parser for an Arith term.
+-- | The parser for an Untyped term.
 parseTerm :: Parser Term
 parseTerm = parseApp
 
@@ -98,5 +100,5 @@ parseLet :: Parser (T.Text, Term)
 parseLet = do
     globName <- identifier
     symbol "="
-    globTerm <- parseTerm
+    globTerm <- label "well-formed Untyped term" parseTerm
     pure (globName, globTerm)
