@@ -37,30 +37,6 @@ symbol = L.symbol ws
 parens :: Parser a -> Parser a
 parens = between (symbol "(") (symbol ")")
 
--- | The parser for the True literal.
-parseTrue :: Parser Term
-parseTrue = symbol "True" >> pure LitTrue
-
--- | The parser for the False literal.
-parseFalse :: Parser Term
-parseFalse = symbol "False" >> pure LitFalse
-
--- | The parser for the zero literal.
-parseZero :: Parser Term
-parseZero = symbol "0" >> pure LitZero
-
--- | The parser for the successor function.
-parseSucc :: Parser Term
-parseSucc = symbol "succ" >> (Succ <$> parseTerm)
-
--- | The parser for the predecessor function.
-parsePrec :: Parser Term
-parsePrec = symbol "prec" >> (Prec <$> parseTerm)
-
--- | The parser for an "isZero?" expression.
-parseIsZero :: Parser Term
-parseIsZero = symbol "isZero?" >> (IsZero <$> parseTerm)
-
 -- | The parser for an if-then-else expression.
 parseIf :: Parser Term
 parseIf = do
@@ -72,17 +48,37 @@ parseIf = do
     falseExpr <- parseTerm
     pure $ IfThenElse cond trueExpr falseExpr
 
--- | Parses an expression without function applications.
-parseSingle :: Parser Term
-parseSingle = parens parseTerm
-          <|> parseTrue
-          <|> parseFalse
-          <|> parseZero
-          <|> parseSucc
-          <|> parsePrec
-          <|> try parseIf
-          <|> parseIsZero
+-- | Parses a literal, which could be `LitTrue`, `LitFalse`, `LitZero` or a term in parenthesis.
+parseLiteral :: Parser Term
+parseLiteral = choice
+    [ parens parseTerm
+    , LitTrue <$ symbol "True"
+    , LitFalse <$ symbol "False"
+    , LitZero  <$ symbol "0"
+    ]
+  
+{- |
+Parses a complex expression, such as
+  - a term in parenthesis
+  - succ <lit>
+  - prec <lit>
+  - isZero? <lit>
+  - if-then-else-expression
+  - a literal.
+-}
+parseComplex :: Parser Term
+parseComplex = choice
+    [ parens parseTerm
+    , Succ   <$ symbol "succ"    <*> label err parseLiteral
+    , Prec   <$ symbol "prec"    <*> label err parseLiteral
+    , IsZero <$ symbol "isZero?" <*> label err parseLiteral
+    , parseIf
+    , parseLiteral
+    ]
+  where
+    err :: String
+    err = "a literal or a term in parenthesis"
 
 -- | The parser for a TyArith term.
 parseTerm :: Parser Term
-parseTerm = parseSingle
+parseTerm = parseComplex
