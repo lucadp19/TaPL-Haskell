@@ -1,11 +1,13 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.34.3.
+-- This file has been generated from package.yaml by hpack version 0.33.0.
 --
 -- see: https://github.com/sol/hpack
+--
+-- hash: 89279d448286aed06e81016c19cf6ea6b8d88b47dc21715d93ac4edad8f60474
 
 name:           arith
-version:        0.2.0.0
+version:        0.2.1.0
 description:    Please see the README on GitHub at <https://github.com/lucadp19/TaPL-Haskell/tree/master/arith#readme>
 homepage:       https://github.com/lucadp19/TaPL-Haskell#readme
 bug-reports:    https://github.com/lucadp19/TaPL-Haskell/issues
