@@ -1,11 +1,13 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.34.3.
+-- This file has been generated from package.yaml by hpack version 0.33.0.
 --
 -- see: https://github.com/sol/hpack
+--
+-- hash: 4eb3fe4cd5f95c25a9c0dcd302fd1e30fff7bd0c859b0aaf6e738595ba22c5cb
 
 name:           untyped
-version:        0.2.0.0
+version:        0.2.1.0
 description:    Please see the README on GitHub at <https://github.com/lucadp19/TaPL-Haskell/tree/master/untyped#readme>
 author:         Luca De Paulis
 maintainer:     Luca De Paulis

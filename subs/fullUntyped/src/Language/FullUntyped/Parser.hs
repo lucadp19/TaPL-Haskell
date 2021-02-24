@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE LambdaCase #-}
 module Language.FullUntyped.Parser 
     ( -- * Language parsers
       parseTerm
@@ -52,57 +53,71 @@ identifier = lexeme $ do
         | name `elem` reserved = fail $ "keyword " <> T.unpack name <> " cannot be an identifier."
         | otherwise = pure name
 
--- | Parses a local variable and returns the correct De Bruijn index.
-parseLocal :: Parser Term
-parseLocal = do
+-- | Parses a local or global variable and returns the correct De Bruijn index or the correct global term.
+parseVar :: Parser Term
+parseVar = do
     var <- identifier
-    localVar <- asks $ getLocalIndex var
-    case localVar of
+    asks (getLocalIndex var) >>= \case
         Just n  -> pure $ Var n
-        Nothing -> mzero
-
--- | Parses a global variable and returns the corresponding expression.
-parseGlobal :: Parser Term
-parseGlobal = do
-    var <- identifier
-    globalTerm <- asks $ getGlobalTerm var
-    case globalTerm of
-        Just t  -> pure t
-        Nothing -> mzero 
+        Nothing -> asks (getGlobalTerm var) >>= \case
+            Just term -> pure term
+            Nothing   -> fail  $ "no local or global variable named " <> T.unpack var
 
 -- | Parses a lambda abstraction.
 parseLambda :: Parser Term
 parseLambda = do
     char '\\'
-    boundVar <- identifier
+    boundVar <- label "identifier" identifier
     symbol "."
     -- @local (insertIntoLocals boundVar)@ adds @boundVar@ to the list of local variables
     body <- local (insertIntoLocals boundVar) parseTerm
     pure $ Lam boundVar body
 
--- | The parser for the True literal.
-parseTrue :: Parser Term
-parseTrue = symbol "True" >> pure LitTrue
+-- | Parses a literal, which can be `LitTrue`, `LitFalse`, `LitZero`, a variable or a term in parenthesis.
+parseLiteral :: Parser Term
+parseLiteral = choice
+    [ parens parseTerm
+    , LitTrue  <$ symbol "True"
+    , LitFalse <$ symbol "False"
+    , LitZero  <$ symbol "0"
+    , parseVar
+    ]
 
--- | The parser for the False literal.
-parseFalse :: Parser Term
-parseFalse = symbol "False" >> pure LitFalse
+-- | Parses a non-top-level function application.
+parseApp :: Parser Term
+parseApp = do
+    apps <- some parseLiteral
+    pure $ foldl1' App apps
 
--- | The parser for the zero literal.
-parseZero :: Parser Term
-parseZero = symbol "0" >> pure LitZero
+{- | 
+Parses a complex expression, such as
+    - succ <f-app>
+    - prec <f-app>
+    - isZero? <f-app>
+    - if-then-else
+    - lambda abstraction
+    - function application
+    - term in parenthesis.
+-}
+parseComplex :: Parser Term
+parseComplex = choice
+    [ parens parseTerm
+    , Succ   <$ symbol "succ"    <*> label err parseApp
+    , Prec   <$ symbol "prec"    <*> label err parseApp
+    , IsZero <$ symbol "isZero?" <*> label err parseApp
+    , parseIf
+    , parseLambda
+    , parseApp
+    ]
+  where
+    err :: String
+    err = "function application, literal or term in parenthesis"
 
--- | The parser for the successor function.
-parseSucc :: Parser Term
-parseSucc = symbol "succ" >> (Succ <$> parseTerm)
-
--- | The parser for the predecessor function.
-parsePrec :: Parser Term
-parsePrec = symbol "prec" >> (Prec <$> parseTerm)
-
--- | The parser for an "isZero?" expression.
-parseIsZero :: Parser Term
-parseIsZero = symbol "isZero?" >> (IsZero <$> parseTerm)
+-- | Parses a FullUntyped term.
+parseTerm :: Parser Term
+parseTerm = do
+    apps <- some parseComplex
+    pure $ foldl1' App apps
 
 -- | The parser for an if-then-else expression.
 parseIf :: Parser Term
@@ -114,30 +129,6 @@ parseIf = do
     symbol "else"
     falseExpr <- parseTerm
     pure $ IfThenElse cond trueExpr falseExpr
-
--- | Parses an expression without function applications.
-parseSingle :: Parser Term
-parseSingle = parens parseTerm
-          <|> parseLambda 
-          <|> try parseLocal
-          <|> try parseGlobal
-          <|> parseTrue
-          <|> parseFalse
-          <|> parseZero
-          <|> parseSucc
-          <|> parsePrec
-          <|> try parseIf
-          <|> parseIsZero
-
--- | Parses a series of function applications.
-parseApp :: Parser Term
-parseApp = do
-    apps <- some parseSingle
-    pure $ foldl1' App apps
-
--- | The parser for a FullyUntyped term.
-parseTerm :: Parser Term
-parseTerm = parseApp
 
 -- | The parser for a global let expression.
 parseLet :: Parser (T.Text, Term)

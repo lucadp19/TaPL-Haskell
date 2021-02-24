@@ -7,7 +7,6 @@ Arith language.
 module Language.Arith.Parser 
     ( -- * Main parser
       parseTerm
-    , parseFalse
     ) where
 
 import Language.Arith.Syntax ( Term(..) )
@@ -34,48 +33,36 @@ symbol = L.symbol ws
 parens :: Parser a -> Parser a
 parens = between (symbol "(") (symbol ")")
 
--- | The parser for the True literal.
-parseTrue :: Parser Term
-parseTrue = symbol "True" >> pure LitTrue
-
--- | The parser for the False literal.
-parseFalse :: Parser Term
-parseFalse = symbol "False" >> pure LitFalse
-
--- | The parser for the zero literal.
-parseZero :: Parser Term
-parseZero = symbol "0" >> pure LitZero
-
--- | The parser for the successor function.
-parseSucc :: Parser Term
-parseSucc = symbol "succ" >> (Succ <$> parseTerm)
-
--- | The parser for the predecessor function.
-parsePrec :: Parser Term
-parsePrec = symbol "prec" >> (Prec <$> parseTerm)
-
--- | The parser for an "isZero?" expression.
-parseIsZero :: Parser Term
-parseIsZero = symbol "isZero?" >> (IsZero <$> parseTerm)
+-- | Parses a literal value: `LitTrue`, `LitFalse`, `LitZero` or a term in parentheses.
+parseLiteral :: Parser Term
+parseLiteral = choice
+    [ parens parseTerm
+    , LitZero  <$ symbol "0"
+    , LitTrue  <$ symbol "True"
+    , LitFalse <$ symbol "False"
+    ]
 
 -- | The parser for an if-then-else expression.
 parseIf :: Parser Term
 parseIf = do
-    symbol "if"
+    _ <- symbol "if"
     cond <- parseTerm
-    symbol "then"
+    _ <- symbol "then"
     trueExpr <- parseTerm
-    symbol "else"
+    _ <- symbol "else"
     falseExpr <- parseTerm
     pure $ IfThenElse cond trueExpr falseExpr
-
--- | The parser for an Arith term.
+  
+-- | The parser for a complete Arith expression.
 parseTerm :: Parser Term
-parseTerm = parseTrue
-        <|> parseFalse
-        <|> parseZero
-        <|> try parseSucc
-        <|> try parsePrec
-        <|> try parseIf
-        <|> try parseIsZero
-        <|> parens parseTerm
+parseTerm = choice
+    [ parens parseTerm
+    , Succ   <$ symbol "succ"    <*> label expectLit parseLiteral
+    , Prec   <$ symbol "prec"    <*> label expectLit parseLiteral
+    , IsZero <$ symbol "isZero?" <*> label expectLit parseLiteral
+    , parseIf
+    , parseLiteral
+    ]
+  where
+    expectLit :: String
+    expectLit = "a literal value or a term in parentheses"

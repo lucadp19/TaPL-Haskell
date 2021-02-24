@@ -1,12 +1,18 @@
 # Untyped Lambda Calculus
 
-`untyped` is an implementation of the pure Untyped Lambda Calculus: as such, it only implements lambda abstractions and applications.
+`Untyped` is an implementation of the pure Untyped Lambda Calculus: as such, it only implements lambda abstractions and applications.
 
-The full BNF grammar for `untyped` is the following:
-
-    t ::= \x. t
-        | t1 t2
+The full BNF grammar for `Untyped` is the following:
+```
+    <single> 
+          ::= (<term>)
+            | \<var>. <term>
+            | <var>
     
+    <term> ::= <single> 
+             | <term> <single>
+```
+
 Provided you've installed `stack`, `untyped` implements a REPL (Read-Eval-Print-Loop) with the following commands:
 - `:p` parses an expression and prints out the corresponding AST;
 - `:s` steps an expression into another expression. If the expression is either stuck or a value (which means it can't be evaluated further) the REPL prints a striked out arrow;
@@ -18,7 +24,16 @@ Provided you've installed `stack`, `untyped` implements a REPL (Read-Eval-Print-
 
 - `:q` quits the REPL.
 
-To open the `Untyped` REPL using `stack` you can use the command `stack exec untyped-exe`. To open the documentation use the command `stack haddock --open untyped` and `stack` will automatically open the Haddock files on your browser.
+
+To open the `Untyped` REPL using `stack` you should issue the following three commands:
+```
+$ stack update
+$ stack build
+$ stack exec untyped
+```
+The first updates the `stack` files, the second builds the `TaPL` project and the third finally launches the executable. 
+
+To open the documentation use the command `stack haddock --open untyped` and `stack` will automatically open the Haddock files on your browser.
 
 ## Implementation details
 

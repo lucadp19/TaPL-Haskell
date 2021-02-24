@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE LambdaCase #-}
 
 {-|
 The "Language.Untyped.Parser" module contains the several parsers used to implement the
@@ -48,23 +49,15 @@ parens = between (symbol "(") (symbol ")")
 identifier :: Parser T.Text
 identifier = lexeme $ T.pack <$> some letterChar
 
--- | Parses a local variable and returns the correct De Bruijn index.
-parseLocal :: Parser Term
-parseLocal = do
+-- | Parses a local or global variable and returns the correct De Bruijn index or the correct global term.
+parseVar :: Parser Term
+parseVar = do
     var <- identifier
-    env <- ask
-    case getLocalIndex var env of
+    asks (getLocalIndex var) >>= \case
         Just n  -> pure $ Var n
-        Nothing -> mzero
-
--- | Parses a global variable and returns the corresponding expression.
-parseGlobal :: Parser Term
-parseGlobal = do
-    var <- identifier
-    env <- ask
-    case getGlobalTerm var env of
-        Just t  -> pure t
-        Nothing -> mzero 
+        Nothing -> asks (getGlobalTerm var) >>= \case
+            Just term -> pure term
+            Nothing   -> fail $ "no local or global variable named " <> T.unpack var
 
 -- | Parses a lambda abstraction.
 parseLambda :: Parser Term
@@ -78,10 +71,11 @@ parseLambda = do
 
 -- | Parses a single variable or lambda abstraction.
 parseSingle :: Parser Term
-parseSingle = parens parseTerm
-          <|> parseLambda 
-          <|> try parseLocal
-          <|> try parseGlobal
+parseSingle = choice 
+    [ parens parseTerm
+    , parseLambda 
+    , parseVar
+    ]
 
 -- | Parses a series of function applications.
 parseApp :: Parser Term
@@ -89,7 +83,7 @@ parseApp = do
     apps <- some parseSingle
     pure $ foldl1' App apps
 
--- | The parser for an Arith term.
+-- | The parser for an Untyped term.
 parseTerm :: Parser Term
 parseTerm = parseApp
 
@@ -98,5 +92,5 @@ parseLet :: Parser (T.Text, Term)
 parseLet = do
     globName <- identifier
     symbol "="
-    globTerm <- parseTerm
+    globTerm <- label "well-formed Untyped term" parseTerm
     pure (globName, globTerm)

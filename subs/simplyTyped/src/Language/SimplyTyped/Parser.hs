@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE LambdaCase #-}
 
 {- |
 The "Language.SimplyTyped.Parser" module contains the several parsers used to implement the
@@ -61,23 +62,32 @@ identifier = lexeme $ do
         | name `elem` reserved = fail $ "keyword " <> T.unpack name <> " cannot be an identifier."
         | otherwise = pure name
 
--- | Parses a local variable and returns the correct De Bruijn index.
-parseLocal :: Parser Term
-parseLocal = do
-    var <- identifier
-    localVar <- asks $ getLocalIndex var
-    case localVar of
-        Just n  -> pure $ Var n
-        Nothing -> mzero
+-- | Parses a single type annotation.
+parseSingleType :: Parser Typ
+parseSingleType = choice
+    [ parens parseArrowTy
+    , Bool <$ symbol "Bool"
+    , Nat <$ symbol "Nat" 
+    ]
 
--- | Parses a global variable and returns the corresponding expression.
-parseGlobal :: Parser Term
-parseGlobal = do
+-- | Parses an @Arr@ow type annotation.
+parseArrowTy :: Parser Typ
+parseArrowTy = makeExprParser parseSingleType 
+    [ [ InfixL $ Arr <$ symbol "->" ] ]
+
+-- | The parser for type annotations.
+parseType :: Parser Typ
+parseType = parseArrowTy
+
+-- | Parses a local or global variable and returns the correct De Bruijn index or the corresponding global term.
+parseVar :: Parser Term
+parseVar = do
     var <- identifier
-    globalTerm <- asks $ getGlobalTerm var
-    case globalTerm of
-        Just t  -> pure t
-        Nothing -> mzero 
+    asks (getLocalIndex var) >>= \case
+        Just n  -> pure $ Var n
+        Nothing -> asks (getGlobalTerm var) >>= \case
+            Just term -> pure term
+            Nothing   -> fail $ "no local or global variable named " <> T.unpack var
 
 -- | Parses a lambda abstraction.
 parseLambda :: Parser Term
@@ -92,86 +102,61 @@ parseLambda = do
     body <- local (insertIntoLocals (boundVar, boundTyp)) parseTerm
     pure $ Lam boundVar boundTyp body
 
--- | Parses a single type annotation.
-parseSingleType :: Parser Typ
-parseSingleType = choice
-    [ parens parseArrow
-    , Bool <$ symbol "Bool"
-    , Nat <$ symbol "Nat" ]
+-- | Parses a literal, which can be `LitZero`, `LitTrue`, `LitFalse`, a variable or a term in parenthesis.
+parseLiteral :: Parser Term
+parseLiteral = choice
+    [ parens parseTerm
+    , LitTrue  <$ symbol "True"
+    , LitFalse <$ symbol "False"
+    , LitZero  <$ symbol "0" 
+    , parseVar 
+    ]
 
--- | Parses an @Arr@ow type annotation.
-parseArrow :: Parser Typ
-parseArrow = makeExprParser parseSingleType operatorTable
+-- | Parses a function application.
+parseApp :: Parser Term
+parseApp = makeExprParser parseLiteral 
+    [ [ InfixL $ App <$ symbol "" ] ]
+
+{- |
+Parses a complex expression, which can be
+    - a term in parenthesis
+    - Succ <app>
+    - Prec <app>
+    - IsZero <app>
+    - if expression
+    - lambda expression
+    - function application.
+-}
+parseComplex :: Parser Term
+parseComplex = choice
+    [ parens parseTerm
+    , Succ   <$ symbol "succ"    <*> label err parseApp
+    , Prec   <$ symbol "prec"    <*> label err parseApp
+    , IsZero <$ symbol "isZero?" <*> label err parseApp
+    , parseIf
+    , parseLambda
+    , parseApp
+    ]
   where
-    operatorTable :: [[Operator Parser Typ]]
-    operatorTable = [ [ binary "->" Arr ] ]
-    binary :: T.Text -> (Typ -> Typ -> Typ) -> Operator Parser Typ
-    binary name f = InfixL (f <$ symbol name)
+    err :: String
+    err = "a function application, a literal or a term in parenthesis"
 
--- | The parser for type annotations.
-parseType :: Parser Typ
-parseType = parseArrow
-
--- | The parser for the True literal.
-parseTrue :: Parser Term
-parseTrue = symbol "True" >> pure LitTrue
-
--- | The parser for the False literal.
-parseFalse :: Parser Term
-parseFalse = symbol "False" >> pure LitFalse
-
--- | The parser for the zero literal.
-parseZero :: Parser Term
-parseZero = symbol "0" >> pure LitZero
-
--- | The parser for the successor function.
-parseSucc :: Parser Term
-parseSucc = symbol "succ" >> (Succ <$> parseTerm)
-
--- | The parser for the predecessor function.
-parsePrec :: Parser Term
-parsePrec = symbol "prec" >> (Prec <$> parseTerm)
-
--- | The parser for an "isZero?" expression.
-parseIsZero :: Parser Term
-parseIsZero = symbol "isZero?" >> (IsZero <$> parseTerm)
-
--- | The parser for an if-then-else expression.
+-- | Parses an "if-then-else" expression.
 parseIf :: Parser Term
 parseIf = do
     symbol "if"
     cond <- parseTerm
     symbol "then"
-    trueExpr <- parseTerm
+    trueT <- parseTerm
     symbol "else"
-    falseExpr <- parseTerm
-    pure $ IfThenElse cond trueExpr falseExpr
+    falseT <- parseTerm
+    pure $ IfThenElse cond trueT falseT
 
--- | Parses an expression without function applications.
-parseSingleTerm :: Parser Term
-parseSingleTerm = 
-    parens parseTerm
- <|> parseLambda 
- <|> try parseLocal
- <|> try parseGlobal
- <|> parseTrue
- <|> parseFalse
- <|> parseZero
- <|> parseSucc
- <|> parsePrec
- <|> try parseIf
- <|> parseIsZero
-
--- | Parses a series of function applications.
-parseApp :: Parser Term
-parseApp = makeExprParser parseSingleTerm operatorTable
-  where
-    operatorTable :: [[Operator Parser Term]]
-    operatorTable = [ [InfixL (App <$ symbol "")] ]
 
 -- | The parser for a SimplyTyped term.
 parseTerm :: Parser Term
-parseTerm = parseApp
+parseTerm = makeExprParser parseComplex
+    [ [InfixL (App <$ symbol "")] ]
 
 -- | The parser for a global let expression.
 parseLet :: Parser (T.Text, Term)
