@@ -6,18 +6,25 @@
 - `isZero?`, which is an operator that tests if a number is zero or not.
 
 The full BNF grammar for `TyArith` is the following:
+```
+    <lit> ::= (<term>)
+            | True
+            | False
+            | 0
 
-    t ::= True
-        | False
-        | 0
-        | succ t
-        | prec t
-        | isZero? t
-        | if t then t else t
+    <term> ::= succ <app>
+             | prec <app>
+             | isZero? <app>
+             | if <term>₁ then <term>₂ else <term>₃
+             | <lit>
     
+    <type> ::= Nat
+             | Bool
+```
+   
 All `TyArith` programs are typed, which means that every ill-typed program is rejected before being executed: this is the main difference between `TyArith` and its predecessor, `Arith`.
 
-Provided you've installed `stack`, `Arith` implements a simple REPL (Read-Eval-Print-Loop) with the following commands:
+Provided you've installed `stack`, `TyArith` implements a simple REPL (Read-Eval-Print-Loop) with the following commands:
 - `:p` parses an expression and prints out the corresponding AST;
 - `:s` steps an expression into another expression. If the expression is either stuck or a value (which means it can't be evaluated further) the REPL prints a striked out arrow;
 - `:a` fully evaluates an expression but prints all the steps;
@@ -25,4 +32,12 @@ Provided you've installed `stack`, `Arith` implements a simple REPL (Read-Eval-P
 - `:e` fully evaluates an expression and prints the final result (writing `:e` is the same as writing directly the expression);
 - `:q` quits the REPL.
 
-To open the `TyArith` REPL using `stack` you can use the command `stack exec tyArith-exe`. To open the documentation use the command `stack haddock --open tyArith` and `stack` will automatically open the Haddock files on your browser.
+To open the `TyArith` REPL using `stack` you should issue the following three commands:
+```
+$ stack update
+$ stack build
+$ stack exec typed-arith
+```
+The first updates the `stack` files, the second builds the `TaPL` project and the third finally launches the executable. 
+
+ To open the documentation use the command `stack haddock --open typed-arith` and `stack` will automatically open the Haddock files on your browser.
