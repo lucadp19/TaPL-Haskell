@@ -11,6 +11,9 @@ It exposes a single parsers, used to parse terms that need to be evaluated
 module Language.TyArith.Parser 
     ( -- * Language parsers
       parseTerm
+      -- ** Helpers
+    , Parser
+    , symbol
     ) where
 
 import Language.TyArith.Syntax ( Term(..) )
