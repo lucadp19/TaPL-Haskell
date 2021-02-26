@@ -11,6 +11,9 @@ module Language.SimplyTyped.Parser
     ( -- * Language parsers
       parseTerm
     , parseLet
+      -- ** Helpers
+    , Parser
+    , symbol
     ) where
 
 import Language.SimplyTyped.Types ( Typ(..) )

@@ -4,10 +4,10 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 14f8ebdc4a1c28cad163ecdecfcb7e4104805f1891d93335d987712972586658
+-- hash: 6d3df9d30341adae67ba2e5340437ff45e97bb18baf0e2c87425aa2fda8c18e2
 
 name:           simply-typed
-version:        0.2.1.0
+version:        0.2.1.1
 description:    Please see the README on GitHub at <https://github.com/lucadp19/TaPL-Haskell/tree/master/simplyTyped#readme>
 homepage:       https://github.com/lucadp19/TaPL-Haskell#readme
 bug-reports:    https://github.com/lucadp19/TaPL-Haskell/issues
