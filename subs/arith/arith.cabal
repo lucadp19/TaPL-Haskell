@@ -4,10 +4,10 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 89279d448286aed06e81016c19cf6ea6b8d88b47dc21715d93ac4edad8f60474
+-- hash: 16aa038793143b2053d0c846ad1a140b1b15aae39ac9d9867faeb1bacc232015
 
 name:           arith
-version:        0.2.1.0
+version:        0.2.1.1
 description:    Please see the README on GitHub at <https://github.com/lucadp19/TaPL-Haskell/tree/master/arith#readme>
 homepage:       https://github.com/lucadp19/TaPL-Haskell#readme
 bug-reports:    https://github.com/lucadp19/TaPL-Haskell/issues
