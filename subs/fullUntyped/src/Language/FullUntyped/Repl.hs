@@ -3,7 +3,6 @@
 
 module Language.FullUntyped.Repl
     ( repl
-    , untyped
     ) where
 
 import qualified Data.Text as T
@@ -31,10 +30,6 @@ repl = run $ runInputT defaultSettings loop
   where 
     run :: Eval a -> IO a
     run t = runReaderT (runEval t) emptyEnv
-
--- | The Read-Eval-Print-Loop of the FullUntyped language.
-untyped :: IO ()
-untyped = repl
 
 -- | The main loop of the FullUntyped REPL.
 loop :: InputT Eval ()
@@ -212,18 +207,3 @@ printHelpList = outputStrLn `mapM_` helpList
         , ":help      / :h    Command to print the list of commands."
         , ":quit      / :q    Command to quit the REPL."
         ]
-
-{- |
-The 'printTyErrOrExec' function takes two function 
-(a @cmd@ function and a @printer@ function) and a term. 
-
-The @cmd@ function
-returns a result wrapped in the 'Eval' monad: 
-this function then prints it through the @printer@ function.
--}
-printExec 
-    :: (Term -> a)          -- ^ The command to be executed on the parsed 'Term'.
-    -> (a -> Eval ())       -- ^ Printer function.
-    -> Term                 -- ^ The initial text to be parsed.
-    -> InputT Eval ()
-printExec cmd printer term = lift $ printer $ cmd term
