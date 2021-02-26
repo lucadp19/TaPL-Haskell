@@ -4,6 +4,9 @@ module Language.FullUntyped.Parser
     ( -- * Language parsers
       parseTerm
     , parseLet
+      -- ** Helpers
+    , Parser
+    , symbol
     ) where
 
 import Language.FullUntyped.Syntax ( Term(..) )
