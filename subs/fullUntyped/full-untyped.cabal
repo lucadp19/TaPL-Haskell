@@ -4,10 +4,10 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: e1e3fd3d8230357dff9569e61f1cc4f7def73e0c8d5db26a4c4275664637683e
+-- hash: 4ef29aaa1bcb2cf1588ccfa3f1ebcfaf6a58f39b0964eb0909a87d3950ef8a0a
 
 name:           full-untyped
-version:        0.2.1.0
+version:        0.2.1.1
 description:    Please see the README on GitHub at <https://github.com/githubuser/fullUntyped#readme>
 homepage:       https://github.com/lucadp19/TaPL-Haskell#readme
 bug-reports:    https://github.com/lucadp19/TaPL-Haskell/issues

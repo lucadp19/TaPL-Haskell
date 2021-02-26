@@ -7,6 +7,9 @@ Arith language.
 module Language.Arith.Parser 
     ( -- * Main parser
       parseTerm
+      -- ** Helper functions
+    , Parser
+    , symbol
     ) where
 
 import Language.Arith.Syntax ( Term(..) )

@@ -14,7 +14,7 @@ module Language.TyArith.Repl
 import qualified Data.Text as T
 
 import Language.TyArith.Syntax ( Term )
-import Language.TyArith.Parser ( parseTerm )
+import Language.TyArith.Parser ( parseTerm, Parser, symbol )
 import Language.TyArith.Eval ( eval, step )
 import Language.TyArith.Pretty
     ( evalArrow, stepArrow, lastStepArrow, text )
@@ -25,8 +25,8 @@ import Data.Text.Prettyprint.Doc ( (<+>), indent, pretty )
 import Data.List as List ( isPrefixOf )
 import Data.Void (Void)
 
-import Text.Megaparsec ( runParser,  errorBundlePretty, ParseErrorBundle )
-
+import Text.Megaparsec hiding ( (<?>) )
+import Control.Monad.IO.Class ( liftIO )
 import Control.Monad.Trans.Class ( lift )
 
 import System.Console.Haskeline
@@ -40,38 +40,132 @@ loop :: InputT IO ()
 loop = do
     line <- getInputLine "TyArith> "
     case line of
-        Nothing                         -> outputStrLn "Leaving TyArith REPL."
-        Just input -> case input of
-            _ | ":q" `isPrefixOf` input -> outputStrLn "Leaving TyArith REPL."
-            _ | ":a" `isPrefixOf` input -> lift (allStCmd $ removeCmd $ T.pack input) >> loop
-            _ | ":p" `isPrefixOf` input -> lift (parseCmd $ removeCmd $ T.pack input) >> loop
-            _ | ":s" `isPrefixOf` input -> lift (stepCmd  $ removeCmd $ T.pack input) >> loop
-            _ | ":t" `isPrefixOf` input -> lift (typeCmd  $ removeCmd $ T.pack input) >> loop
-            _ | ":e" `isPrefixOf` input -> lift (evalCmd  $ removeCmd $ T.pack input) >> loop
-            _ | ":"  `isPrefixOf` input -> outputStrLn "Command could not be parsed." >> loop
-            _                           -> lift (evalCmd  $             T.pack input) >> loop
+        Nothing -> outputStrLn "Leaving TyArith REPL."
+        Just input -> dispatchCommand $ T.pack input
 
--- | Removes the REPL command from the input line.
-removeCmd :: T.Text -> T.Text
-removeCmd = T.dropWhile (== ' ') . T.dropWhile (/= ' ')
+-- | A REPL Command.
+data Command
+    = QuitCmd           -- ^ Quitting the REPL.
+    | HelpCmd           -- ^ Hasking for help.
+    | WrongCmd          -- ^ Unknown command.
+    | ParseCmd    Term  -- ^ Parsing.
+    | TypeCmd     Term  -- ^ Type of an expression.
+    | EvalCmd     Term  -- ^ Fully evaluating.
+    | StepCmd     Term  -- ^ Stepping an expression.
+    | AllStepsCmd Term  -- ^ Fully evaluates and prints all the steps.
+    
+{- | 
+Takes the contents of the REPL line, parses it 
+and if it is a valid command it executes it. 
+-}
+dispatchCommand :: T.Text -> InputT IO ()
+dispatchCommand txt = case runParser (parseCommand <* eof) "" txt of
+    Left parseErr -> liftIO (putStr $ errorBundlePretty parseErr) *> loop
+    Right cmd -> execCmd cmd
+  
+-- | Parses a REPL 'Command'.
+parseCommand :: Parser Command
+parseCommand = choice
+    [ parseEvalCmd
+    , parseParseCmd
+    , parseStepCmd
+    , parseAllStepsCmd
+    , parseQuitCmd
+    , parseTypeCmd
+    , parseHelpCmd
+    , parseWrongCmd 
+    ]
 
--- | Parses a text into a term.
-parseLine :: T.Text -> Either (ParseErrorBundle T.Text Void) Term
-parseLine = runParser parseTerm "tyarith"
+-- | Parses an 'EvalCmd'.
+parseEvalCmd :: Parser Command
+parseEvalCmd = do
+    _ <- symbol ":eval" 
+      <|> symbol ":e" 
+      <|> (symbol "" <* notFollowedBy ":")
+    EvalCmd <$> parseTerm
 
--- | The command for parsing and printing the result.
-parseCmd :: T.Text -> IO ()
-parseCmd = parseExec pure print
+-- | Parses a 'ParseCmd'.
+parseParseCmd :: Parser Command
+parseParseCmd = do
+    _ <- symbol ":parse"
+      <|> symbol ":p"
+    ParseCmd <$> parseTerm
 
--- | THe command for showing all the steps in the evaluation of a term.
-allStCmd :: T.Text -> IO ()
-allStCmd = parseExec (id <?>) allStepsPrint
+-- | Parses a 'QuitCmd'.
+parseQuitCmd :: Parser Command
+parseQuitCmd = do
+    _ <- symbol ":quit" 
+      <|> symbol ":q" 
+    pure QuitCmd
+
+-- | Parses a 'StepCmd'.
+parseStepCmd :: Parser Command
+parseStepCmd = do
+    _ <- symbol ":step"
+      <|> symbol ":s"
+    StepCmd <$> parseTerm
+
+-- | Parses an 'AllStepsCmd'.
+parseAllStepsCmd :: Parser Command
+parseAllStepsCmd = do
+    _ <- symbol ":allSteps"
+      <|> symbol ":a"
+    AllStepsCmd <$> parseTerm
+
+-- | Parses a 'TypeCmd'.
+parseTypeCmd :: Parser Command
+parseTypeCmd = do
+    _ <- symbol ":type"
+      <|> symbol ":t"
+    TypeCmd <$> parseTerm
+
+-- | Parses a 'HelpCmd'.
+parseHelpCmd :: Parser Command
+parseHelpCmd = do
+    _ <- symbol ":help"
+      <|> symbol ":h"
+    pure HelpCmd
+
+-- | Parses an unknown command and returns an error.
+parseWrongCmd :: Parser Command
+parseWrongCmd = do
+    _ <- symbol ":"
+    cmd <- many (satisfy (/= ' '))
+    fail $ "The command \":" <> cmd <> "\" is not a valid command. \
+          \\nTo print a list of all the commands, use the command ':help' or ':h'."
+
+{- |
+'execCmd' takes a REPL 'Command' and it executes it. 
+-}
+execCmd :: Command -> InputT IO ()
+-- Helper command.
+execCmd HelpCmd = outputStrLn "List of option for the TyArith REPL:" *> printHelpList *> loop
+-- Command to quit the REPL.
+execCmd QuitCmd = outputStrLn "Leaving TyArith REPL."
+-- Command to evaluate an expression using the multistep relation.j
+execCmd (EvalCmd term) = printTyErrOrExec (eval <?>) evalPrint term *> loop
   where
-    -- | AllSteps-command helper.
+    -- | Helper command for 'evalCmd'.
+    evalPrint :: Term -> IO ()
+    evalPrint term = print $ evalArrow <+> pretty term
+-- Command to parse an expression and print the resulting AST.
+execCmd (ParseCmd term) = printTyErrOrExec pure print term *> loop
+-- Command to execute a single step of evaluation.
+execCmd (StepCmd term) = printTyErrOrExec (step <?>) stepPrint term *> loop
+  where
+    -- | Helper print function.
+    stepPrint :: Maybe Term -> IO ()
+    stepPrint = \case
+        Just t' -> print $ stepArrow <+> pretty t'        
+        Nothing -> print lastStepArrow
+-- Command to fully evaluate an expression and print all the steps.
+execCmd (AllStepsCmd term) = printTyErrOrExec (id <?>) allStepsPrint term *> loop
+  where
+    -- | Prints the complete result of the evaluation.
     allStepsPrint :: Term -> IO ()
-    allStepsPrint term = do    
+    allStepsPrint term = do
         -- The first line is indented because the following ones have arrows.
-        print . indent 4 $ pretty term
+        print $ indent 4 $ pretty term
         recPrintSteps term
     -- | Recursive helper function to print all steps of the evaluation.
     recPrintSteps :: Term -> IO ()
@@ -80,47 +174,43 @@ allStCmd = parseExec (id <?>) allStepsPrint
         Just t' -> do
             print $ stepArrow <+> pretty t'
             recPrintSteps t'
-
--- | The command for stepping an expression into another and pretty-printing its result.
-stepCmd :: T.Text -> IO ()
-stepCmd = parseExec (step <?>) stepPrint
+-- Command to compute the type of a term.
+execCmd (TypeCmd term) = printTyErrOrExec typeof typePrint term *> loop
   where
-    -- | Helper printer function.
-    stepPrint :: Maybe Term -> IO ()
-    stepPrint term = print $ case term of
-        Nothing -> lastStepArrow  -- The expression is either a value or stuck.
-        Just t' -> stepArrow <+> pretty t'
-
--- | The command for fully evaluating an expression and pretty-printing its result.
-evalCmd :: T.Text -> IO ()
-evalCmd = parseExec (eval <?>) evalPrint
-  where
-    -- | Helper printer function.
-    evalPrint :: Term -> IO ()
-    evalPrint term = print $ evalArrow <+> pretty term
-
--- | The command for calculating the static type of an expression.
-typeCmd :: T.Text -> IO ()
-typeCmd = parseExec typeof typePrint
-  where
-    -- | Helper printer function.
+    -- | Helper command for 'typeCmd'.
     typePrint :: Typ -> IO ()
     typePrint typ = print $ text " <expr> :" <+> pretty typ
 
-{- |
-The @parseExec@ function is used to parse a 'T.Text' into a 'Term' 
-and then either print the parsing error or execute a command on the
-'Term' obtained by the parsing step.
+printHelpList :: InputT IO ()
+printHelpList = outputStrLn `mapM_` helpList
+  where
+    helpList :: [String]
+    helpList =
+        [ ":parse     / :p    Command to parse the given text and print the result of the parsing."
+        , ":type      / :t    Command to print the type of a term (or a type error)."
+        , ":step      / :s    Command to step an expression into another expression."
+        , ":allSteps  / :a    Command to print all the steps of the evaluation of a term."
+        , ":eval      / :e    Command to print the final result of the evaluation of a term. \
+            \Can be used without writing \":eval\" or \":e\"."
+        , ":help      / :h    Command to print the list of commands."
+        , ":quit      / :q    Command to quit the REPL."
+        ]
 
-The command returns a 'TypeErr' or a value: the printer function is then
-used to print the type error or pretty-print the resulting value.
+{- |
+The 'printTyErrOrExec' function takes two function 
+(a @cmd@ function and a @printer@ function) and a term. 
+
+The @cmd@ function
+must return either a 'TypeErr'or or a result: if it returns the former 
+the 'printTyErrOrExec' function prints the type error; otherwise it prints
+the result of the @cmd@ through the @printer@ function.
 -}
-parseExec :: (Term -> Either TypeErr a)  -- ^ The command to be executed on the parsed 'Term'.
-          -> (a -> IO ())                -- ^ Printer function.
-          -> T.Text                      -- ^ The initial text to be parsed.
-          -> IO ()
-parseExec cmd printer txt = case parseLine txt of
-    Left parseErr -> putStr $ errorBundlePretty parseErr
-    Right expr    -> case cmd expr of
-        Left typeErr -> print $ pretty typeErr
-        Right result -> printer result 
+printTyErrOrExec
+    :: (Term -> Either TypeErr a)   -- ^ The command to be executed on the parsed 'Term'.
+    -> (a -> IO ())                 -- ^ Printer function.
+    -> Term                         -- ^ The initial text to be parsed.
+    -> InputT IO ()
+printTyErrOrExec cmd printer term = lift $ case cmd term of
+    Left typeErr -> print $ pretty typeErr
+    Right value  -> printer value
+

@@ -11,6 +11,9 @@ module Language.Untyped.Parser
     ( -- * Language parsers
       parseTerm
     , parseLet
+      -- ** Helpers
+    , Parser
+    , symbol
     ) where
 
 import Language.Untyped.Syntax ( Term(..) )

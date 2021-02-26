@@ -37,16 +37,16 @@ The full BNF grammar for `SimplyTyped` is the following:
 All `SimplyTyped` programs are typed, which means that every ill-typed program is rejected before being executed: this is the main difference between `SimplyTyped` and its predecessors, `Untyped` and `FullUntyped`.
 
 Provided you've installed `stack`, `SimplyTyped` implements a simple REPL (Read-Eval-Print-Loop) with the following commands:
-- `:p` parses an expression and prints out the corresponding AST;
-- `:s` steps an expression into another expression. If the expression is either stuck or a value (which means it can't be evaluated further) the REPL prints a striked out arrow;
-- `:a` fully evaluates an expression but prints all the steps;
-- `:t` calculates the type of an expression;
-- `:e` fully evaluates an expression and prints the final result (writing `:e` is the same as writing directly the expression);
-- `:l` binds a name to a term in the global environment: the bound name can be used in the following expressions. The exact syntax for this command is
+- `:help` (or the short version, `:h`) prints a message containing all the various REPL commands;
+- `:parse` (`:p`) parses an expression and prints out the corresponding AST;
+- `:type` (`:t`) calculates the type of an expression;
+- `:step` (`:s`) steps an expression into another expression. If the expression is either stuck or a value (which means it can't be evaluated further) the REPL prints a striked out arrow;
+- `:allSteps` (`:a`) fully evaluates an expression but prints all the steps;
+- `:eval` (`:e`) fully evaluates an expression and prints the final result (writing `:e` is the same as writing directly the expression);
+- `:let` (`:l`) binds a name to a term in the global environment: the bound name can be used in the following expressions. The exact syntax for this command is
 
-        :l <var> = <term>
-
-- `:q` quits the REPL.
+        :l <name> = <expr>
+- `:quit` (`:q`) quits the REPL.
 
 To open the `SimplyTyped` REPL using `stack` you should issue the following three commands:
 ```

@@ -4,10 +4,10 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: a254dfb41db784f4e17f9719f749337c3ad9552263f2b01141b5617d659907fb
+-- hash: 864867d0cf7d59620ef964e3e81a9888b8c4c5e5bfb46450dd89bb4c1a3bb457
 
 name:           TaPL
-version:        0.2.1.0
+version:        0.2.1.1
 description:    Please see the README on GitHub at <https://github.com/lucadp19/TaPL-Haskell#readme>
 homepage:       https://github.com/lucadp19/TaPL-Haskell#readme
 bug-reports:    https://github.com/lucadp19/TaPL-Haskell/issues

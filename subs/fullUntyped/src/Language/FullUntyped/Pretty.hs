@@ -4,7 +4,7 @@
 
 module Language.FullUntyped.Pretty 
     ( -- * Main prettyfing function
-      prettyEval
+      prettyTerm
       -- * Helpers
     , text
     , evalArrow
@@ -38,15 +38,17 @@ lastStepArrow :: Doc ann
 lastStepArrow = text (" ↛ " :: T.Text)
 
 {- |
-@prettyEval@ takes a @Term@ and returns a prettyfied version contained in an 
-environment based on the @Eval@ monad.
+@prettyTerm@ takes a @Term@ and returns a pretty version contained in an 
+environment based on a monad containing an environment @env@ with local variables.
+
+The canonical choice for the monad is 'Language.FullUntyped.Monad.Eval'.
 -}
-prettyEval :: forall m env ann.
+prettyTerm :: forall m env ann.
               ( MonadReader env m
               , HasLocals env) 
            => Term 
            -> m (Doc ann)
-prettyEval = \case
+prettyTerm = \case
     -- Boolean expressions
     LitTrue -> pure $ text "True"
     LitFalse -> pure $ text "False"
@@ -65,7 +67,7 @@ prettyEval = \case
         Just name -> pure $ pretty name
         Nothing   -> error "This cannot happen"
     Lam name body -> (lamText name <+>)
-        <$> local (insertIntoLocals name) (prettyEval body)
+        <$> local (insertIntoLocals name) (prettyTerm body)
     App t1 t2 -> align . sep <$> do
         func <- appParens t1
         arg <- appParens t2
@@ -76,8 +78,8 @@ prettyEval = \case
     -- | Surrounds the prettyfied version of a term with parentheses.
     appParens :: Term -> m (Doc ann)
     appParens t = case t of
-        LitTrue -> prettyEval t
-        LitFalse -> prettyEval t
-        LitZero -> prettyEval t
-        Var _ -> prettyEval t
-        _     -> parens <$> prettyEval t
+        LitTrue -> prettyTerm t
+        LitFalse -> prettyTerm t
+        LitZero -> prettyTerm t
+        Var _ -> prettyTerm t
+        _     -> parens <$> prettyTerm t

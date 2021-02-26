@@ -3,17 +3,16 @@
 
 module Language.FullUntyped.Repl
     ( repl
-    , untyped
     ) where
 
 import qualified Data.Text as T
 
 import Language.FullUntyped.Syntax ( Term )
-import Language.FullUntyped.Parser ( parseTerm, parseLet )
+import Language.FullUntyped.Parser ( parseTerm, parseLet, Parser, symbol )
 import Language.FullUntyped.Eval ( eval, step )
 import Language.FullUntyped.Environment ( emptyEnv, insertIntoGlobals )
 import Language.FullUntyped.Pretty
-    ( evalArrow, stepArrow, lastStepArrow, prettyEval ) 
+    ( evalArrow, stepArrow, lastStepArrow, prettyTerm ) 
 import Language.FullUntyped.Monad ( Eval(runEval) )
 
 import Data.Text.Prettyprint.Doc ( (<+>), indent, Doc )
@@ -21,7 +20,7 @@ import Data.List as List ( isPrefixOf )
 
 import Control.Monad.Reader
 
-import Text.Megaparsec ( runParserT,  errorBundlePretty )
+import Text.Megaparsec hiding ( (<?>) )
 
 import System.Console.Haskeline
 
@@ -32,80 +31,179 @@ repl = run $ runInputT defaultSettings loop
     run :: Eval a -> IO a
     run t = runReaderT (runEval t) emptyEnv
 
--- | The Read-Eval-Print-Loop of the FullUntyped language.
-untyped :: IO ()
-untyped = repl
-
 -- | The main loop of the FullUntyped REPL.
 loop :: InputT Eval ()
 loop = do
     line <- getInputLine "FullUntyped> "
     case line of
         Nothing                         -> outputStrLn "Leaving FullUntyped REPL."
-        Just input -> case input of
-            _ | ":q" `isPrefixOf` input -> outputStrLn "Leaving FullUntyped REPL."
-            _ | ":a" `isPrefixOf` input -> lift (allStCmd $ removeCmd $ T.pack input) >> loop
-            _ | ":p" `isPrefixOf` input -> lift (parseCmd $ removeCmd $ T.pack input) >> loop
-            _ | ":s" `isPrefixOf` input -> lift (stepCmd  $ removeCmd $ T.pack input) >> loop
-            _ | ":e" `isPrefixOf` input -> lift (evalCmd  $ removeCmd $ T.pack input) >> loop
-            _ | ":l" `isPrefixOf` input ->       letCmd   $ removeCmd $ T.pack input
-            _ | ":"  `isPrefixOf` input -> outputStrLn "Command could not be parsed." >> loop
-            _                           -> lift (evalCmd  $             T.pack input) >> loop
+        Just input -> dispatchCommand $ T.pack input
 
--- | Removes the REPL command from the input line.
-removeCmd :: T.Text -> T.Text
-removeCmd = T.dropWhile (== ' ') . T.dropWhile (/= ' ')
+{- |
+The 'Command's that can be executed by the REPL.
+-}
+data Command
+    = EvalCmd Term      -- ^ Evaluates a term.
+    | ParseCmd Term     -- ^ Parses a term.
+    | StepCmd Term      -- ^ Steps a term.
+    | AllStepsCmd Term  -- ^ Fully-evaluates a term and prints all the steps.
+    | TypeCmd Term      -- ^ Computes the type of a term.
+    | GlobalLetCmd 
+        (T.Text, Term)  -- ^ Adds a new global binding.
+    | HelpCmd           -- ^ Prints the helping text.
+    | QuitCmd           -- ^ Quits the REPL.
 
--- | The command for parsing and printing the result.
-parseCmd :: T.Text -> Eval ()
-parseCmd text = do
-    term <- runParserT parseTerm "untyped" text
-    liftIO $ print term
+{- | 
+Takes the contents of the REPL line, parses it 
+and if it is a valid command it executes it. 
+-}
+dispatchCommand :: T.Text -> InputT Eval ()
+dispatchCommand txt = lift (runParserT (parseCommand <* eof) "" txt) >>= \case
+    Left parseErr -> lift (liftIO $ putStr $ errorBundlePretty parseErr) *> loop
+    Right cmd -> execCmd cmd
 
--- | THe command for showing all the steps in the evaluation of a term.
-allStCmd :: T.Text -> Eval ()
-allStCmd term = runParserT parseTerm "untyped" term >>= \case
-    Left err   -> liftIO . putStr . errorBundlePretty $ err
-    Right expr -> do
-        firstExpr <- prettyEval expr
-        -- The first line is indented because the following ones have arrows.
-        liftIO . print . indent 4 $ firstExpr 
-        printAllSteps expr
+-- | Parses a REPL 'Command'.
+parseCommand :: Parser Command
+parseCommand = choice
+    [ parseEvalCmd
+    , parseParseCmd
+    , parseStepCmd
+    , parseAllStepsCmd
+    , parseTypeCmd
+    , parseGlobalLetCmd
+    , parseQuitCmd
+    , parseHelpCmd
+    , parseWrongCmd 
+    ]
+  
+-- | Parses an 'EvalCmd'.
+parseEvalCmd :: Parser Command
+parseEvalCmd = do
+    _ <- symbol ":eval" 
+      <|> symbol ":e" 
+      <|> (symbol "" <* notFollowedBy ":")
+    EvalCmd <$> parseTerm
+
+-- | Parses a 'ParseCmd'.
+parseParseCmd :: Parser Command
+parseParseCmd = do
+    _ <- symbol ":parse"
+      <|> symbol ":p"
+    ParseCmd <$> parseTerm
+
+-- | Parses a 'HelpCmd'.
+parseHelpCmd :: Parser Command
+parseHelpCmd = do
+    _ <- symbol ":help"
+      <|> symbol ":p"
+    pure HelpCmd
+
+-- | Parses a 'QuitCmd'.
+parseQuitCmd :: Parser Command
+parseQuitCmd = do
+    _ <- symbol ":quit" 
+      <|> symbol ":q" 
+    pure QuitCmd
+
+-- | Parses a 'StepCmd'.
+parseStepCmd :: Parser Command
+parseStepCmd = do
+    _ <- symbol ":step"
+      <|> symbol ":s"
+    StepCmd <$> parseTerm
+
+-- | Parses a 'AllStepsCmd'.
+parseAllStepsCmd :: Parser Command
+parseAllStepsCmd = do
+    _ <- symbol ":allSteps"
+      <|> symbol ":a"
+    AllStepsCmd <$> parseTerm
+
+-- | Parses a 'GlobalLetCmd'.
+parseGlobalLetCmd :: Parser Command
+parseGlobalLetCmd = do
+    _ <- symbol ":let"
+      <|> symbol ":l"
+    GlobalLetCmd <$> parseLet
+
+-- | Parses a 'TypeCmd'.
+parseTypeCmd :: Parser Command
+parseTypeCmd = do
+    _ <- symbol ":type"
+      <|> symbol ":t"
+    TypeCmd <$> parseTerm
+
+-- | Parses an unknown command and returns an error.
+parseWrongCmd :: Parser Command
+parseWrongCmd = do
+    _ <- symbol ":"
+    cmd <- many (satisfy (/= ' '))
+    fail $ "The command \":" <> cmd <> "\" is not a valid command. \
+          \\nTo print a list of all the commands, use the command ':help' or ':h'."
+  
+{- |
+'execCmd' takes a REPL 'Command' and it executes it. 
+-}
+execCmd :: Command -> InputT Eval ()
+-- Helper command.
+execCmd HelpCmd = outputStrLn "List of option for the TyArith REPL:" *> printHelpList *> loop
+-- Command to quit the REPL.
+execCmd QuitCmd = outputStrLn "Leaving ExtSimple REPL."
+-- Command to evaluate an expression using the multistep relation.j
+execCmd (EvalCmd term) = lift (evalPrint $ eval term) *> loop
   where
+    -- | Helper command for 'evalCmd'.
+    evalPrint :: Term -> Eval ()
+    evalPrint term = do
+        toPrint <- (evalArrow <+>) <$> prettyTerm term
+        liftIO $ print toPrint
+-- Command to parse an expression and print the resulting AST.
+execCmd (ParseCmd term) = liftIO (print term) *> loop
+-- Command to execute a single step of evaluation.
+execCmd (StepCmd term) = lift (stepPrint $ step term) *> loop
+  where
+    -- | Helper print function.
+    stepPrint :: Maybe Term -> Eval ()
+    stepPrint = \case
+        Just t' -> do
+            toPrint <- (stepArrow <+>) <$> prettyTerm t'
+            liftIO $ print toPrint            
+        Nothing -> liftIO $ print lastStepArrow
+-- Command to fully evaluate an expression and print all the steps.
+execCmd (AllStepsCmd term) = lift (allStepsPrint term) *> loop
+  where
+    -- | Prints the complete result of the evaluation.
+    allStepsPrint :: Term -> Eval ()
+    allStepsPrint term = do
+        firstExpr <- prettyTerm term
+        -- The first line is indented because the following ones have arrows.
+        liftIO $ print $ indent 4 firstExpr
+        recPrintSteps term
     -- | Recursive helper function to print all steps of the evaluation.
-    printAllSteps :: Term -> Eval ()
-    printAllSteps t = case step t of
+    recPrintSteps :: Term -> Eval ()
+    recPrintSteps t = case step t of
         Nothing -> liftIO $ print lastStepArrow
         Just t' -> do
-            toPrint <- (stepArrow <+>) <$> prettyEval t'
+            toPrint <- (stepArrow <+>) <$> prettyTerm t'
             liftIO $ print toPrint
-            printAllSteps t'
+            recPrintSteps t'
+-- Command to add a new global binding.
+execCmd (GlobalLetCmd (var, term)) =
+    mapInputT (local $ insertIntoGlobals (var, term)) loop
 
--- | The command for stepping an expression into another and pretty-printing its result.
-stepCmd :: T.Text -> Eval ()
-stepCmd term = runParserT parseTerm "untyped" term >>= \case
-    Left err -> liftIO . putStr . errorBundlePretty $ err
-    Right expr -> do
-        toPrint <- prettyStep $ step expr
-        liftIO $ print toPrint
+-- | Prints the help message.
+printHelpList :: InputT Eval ()
+printHelpList = outputStrLn `mapM_` helpList
   where
-    prettyStep :: Maybe Term -> Eval (Doc ann)
-    prettyStep = \case
-        Just t' -> (stepArrow <+>) <$> prettyEval t'
-        Nothing -> pure lastStepArrow
-
--- | The command to add a new global binding into the interpreter.
-letCmd :: T.Text -> InputT Eval ()
-letCmd term = lift (runParserT parseLet "untyped" term) >>= \case
-    Left err -> liftIO . putStr . errorBundlePretty $ err
-    Right p@(name, expr) -> lift $
-        let runLoop = runInputT defaultSettings loop in
-            local (insertIntoGlobals p) runLoop
-
--- | The command for fully evaluating an expression and pretty-printing its result.
-evalCmd :: T.Text -> Eval ()
-evalCmd term = runParserT parseTerm "untyped" term >>= \case
-    Left err -> liftIO . putStr . errorBundlePretty $ err
-    Right expr -> do
-        toPrint <- (evalArrow <+>) <$> prettyEval (eval expr)
-        liftIO $ print toPrint
+    helpList :: [String]
+    helpList =
+        [ ":parse     / :p    Command to parse the given text and print the result of the parsing."
+        , ":type      / :t    Command to print the type of a term (or a type error)."
+        , ":step      / :s    Command to step an expression into another expression."
+        , ":allSteps  / :a    Command to print all the steps of the evaluation of a term."
+        , ":eval      / :e    Command to print the final result of the evaluation of a term. \
+            \Can be used without writing \":eval\" or \":e\"."
+        , ":let       / :l    Command to assign a new global name. Syntax is \n\t\t:let <var> = <term>"
+        , ":help      / :h    Command to print the list of commands."
+        , ":quit      / :q    Command to quit the REPL."
+        ]

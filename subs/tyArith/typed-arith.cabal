@@ -4,10 +4,10 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: fd7b14aca921b54f91e12f30cfc274a8c14b8aeaaf7c5dff06177f12e3c07d9c
+-- hash: fe86c07eeb159ea9dc140a83b3c9d2c5e1274523495299d576292d215a8c3663
 
 name:           typed-arith
-version:        0.2.1.0
+version:        0.2.1.1
 description:    Please see the README on GitHub at <https://github.com/githubuser/tyArith#readme>
 homepage:       https://github.com/lucadp19/TaPL-Haskell#readme
 bug-reports:    https://github.com/lucadp19/TaPL-Haskell/issues
