@@ -4,10 +4,10 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 4eb3fe4cd5f95c25a9c0dcd302fd1e30fff7bd0c859b0aaf6e738595ba22c5cb
+-- hash: 42a504fa62c8253b7d17e31c4b96d4e101a191928cd8634e2c9859e7af8e61f9
 
 name:           untyped
-version:        0.2.1.0
+version:        0.2.1.1
 description:    Please see the README on GitHub at <https://github.com/lucadp19/TaPL-Haskell/tree/master/untyped#readme>
 author:         Luca De Paulis
 maintainer:     Luca De Paulis
