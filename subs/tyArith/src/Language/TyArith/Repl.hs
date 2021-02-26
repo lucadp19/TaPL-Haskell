@@ -131,7 +131,8 @@ parseWrongCmd :: Parser Command
 parseWrongCmd = do
     _ <- symbol ":"
     cmd <- many (satisfy (/= ' '))
-    fail $ "The command \":" <> cmd <> "\" is not a valid command."
+    fail $ "The command \":" <> cmd <> "\" is not a valid command. \
+          \\nTo print a list of all the commands, use the command ':help' or ':h'."
 
 {- |
 'execCmd' takes a REPL 'Command' and it executes it. 
