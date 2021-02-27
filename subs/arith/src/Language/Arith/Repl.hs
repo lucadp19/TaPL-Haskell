@@ -130,7 +130,7 @@ execCmd :: Command -> InputT IO ()
 -- Helper command.
 execCmd HelpCmd = outputStrLn "List of option for the Arith REPL:" *> printHelpList *> loop
 -- Command to quit the REPL.
-execCmd QuitCmd = outputStrLn "Leaving ExtSimple REPL."
+execCmd QuitCmd = outputStrLn "Leaving Arith REPL."
 -- Command to evaluate an expression using the multistep relation.
 execCmd (EvalCmd term) = liftIO (evalPrint term) *> loop
   where

@@ -155,10 +155,10 @@ parseWrongCmd = do
 -}
 execCmd :: Command -> InputT Eval ()
 -- Helper command.
-execCmd HelpCmd = outputStrLn "List of option for the TyArith REPL:" *> printHelpList *> loop
+execCmd HelpCmd = outputStrLn "List of option for the SimplyTyped REPL:" *> printHelpList *> loop
 -- Command to quit the REPL.
-execCmd QuitCmd = outputStrLn "Leaving ExtSimple REPL."
--- Command to evaluate an expression using the multistep relation.j
+execCmd QuitCmd = outputStrLn "Leaving SimplyTyped REPL."
+-- Command to evaluate an expression using the multistep relation.
 execCmd (EvalCmd term) = printTyErrOrExec (eval <?>) evalPrint term *> loop
   where
     -- | Helper command for 'evalCmd'.
@@ -178,7 +178,7 @@ execCmd (StepCmd term) = printTyErrOrExec (step <?>) stepPrint term *> loop
             toPrint <- (stepArrow <+>) <$> prettyTerm t'
             liftIO $ print toPrint            
         Nothing -> liftIO $ print lastStepArrow
--- Command to fully evaluate an expression and print all the steps.j
+-- Command to fully evaluate an expression and print all the steps.
 execCmd (AllStepsCmd term) = printTyErrOrExec (id <?>) allStepsPrint term *> loop
   where
     -- | Prints the complete result of the evaluation.
@@ -196,7 +196,7 @@ execCmd (AllStepsCmd term) = printTyErrOrExec (id <?>) allStepsPrint term *> loo
             toPrint <- (stepArrow <+>) <$> prettyTerm t'
             liftIO $ print toPrint
             recPrintSteps t'
--- Command to compute the type of a term.j
+-- Command to compute the type of a term.
 execCmd (TypeCmd term) = printTyErrOrExec typeof typePrint term *> loop
   where
     -- | Helper command for 'typeCmd'.

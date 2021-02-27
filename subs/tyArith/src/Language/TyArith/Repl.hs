@@ -142,7 +142,7 @@ execCmd :: Command -> InputT IO ()
 execCmd HelpCmd = outputStrLn "List of option for the TyArith REPL:" *> printHelpList *> loop
 -- Command to quit the REPL.
 execCmd QuitCmd = outputStrLn "Leaving TyArith REPL."
--- Command to evaluate an expression using the multistep relation.j
+-- Command to evaluate an expression using the multistep relation
 execCmd (EvalCmd term) = printTyErrOrExec (eval <?>) evalPrint term *> loop
   where
     -- | Helper command for 'evalCmd'.
