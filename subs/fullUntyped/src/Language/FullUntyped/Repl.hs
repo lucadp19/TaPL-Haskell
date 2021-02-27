@@ -146,10 +146,10 @@ parseWrongCmd = do
 -}
 execCmd :: Command -> InputT Eval ()
 -- Helper command.
-execCmd HelpCmd = outputStrLn "List of option for the TyArith REPL:" *> printHelpList *> loop
+execCmd HelpCmd = outputStrLn "List of option for the FullUntyped REPL:" *> printHelpList *> loop
 -- Command to quit the REPL.
-execCmd QuitCmd = outputStrLn "Leaving ExtSimple REPL."
--- Command to evaluate an expression using the multistep relation.j
+execCmd QuitCmd = outputStrLn "Leaving FullUntyped REPL."
+-- Command to evaluate an expression using the multistep relation.
 execCmd (EvalCmd term) = lift (evalPrint $ eval term) *> loop
   where
     -- | Helper command for 'evalCmd'.
