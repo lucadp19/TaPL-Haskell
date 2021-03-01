@@ -1,0 +1,47 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.33.0.
+--
+-- see: https://github.com/sol/hpack
+--
+-- hash: bbfba23a90186fdee1172d2b83b71efb35a525db3a2cf9bf84cfcc8d1b61f43d
+
+name:           core
+version:        0.2.1.1
+description:    Please see the README on GitHub at <https://github.com/lucadp19/TaPL-Haskell/tree/master/core#readme>
+homepage:       https://github.com/lucadp19/TaPL-Haskell#readme
+bug-reports:    https://github.com/lucadp19/TaPL-Haskell/issues
+author:         Luca De Paulis
+maintainer:     Luca De Paulis
+copyright:      2020 Luca De Paulis
+license:        GPL-3
+build-type:     Simple
+extra-source-files:
+    README.md
+
+source-repository head
+  type: git
+  location: https://github.com/lucadp19/TaPL-Haskell
+
+library
+  exposed-modules:
+      Core.Environment
+      Core.Lenses
+      Core.Monad
+      Core.Parser
+      Core.Pretty
+  other-modules:
+      Paths_core
+  hs-source-dirs:
+      src
+  default-extensions: OverloadedStrings LambdaCase
+  build-depends:
+      base >=4.7 && <5
+    , exceptions
+    , megaparsec
+    , microlens
+    , mtl
+    , prettyprinter
+    , text
+    , transformers
+  default-language: Haskell2010
