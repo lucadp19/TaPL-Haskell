@@ -25,6 +25,8 @@ dependencies:
 - prettyprinter
 - exceptions
 - haskeline >= 0.8.1.1
+- microlens
+- core
 
 library:
   source-dirs: src

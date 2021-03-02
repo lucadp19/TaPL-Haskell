@@ -1,4 +1,7 @@
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE DuplicateRecordFields  #-}
+{-# LANGUAGE TypeFamilies #-}
 
 {-
 The "Language.Untyped.Environment" module contains the environment used
@@ -14,79 +17,93 @@ module Language.Untyped.Environment
       -- ** Empty environment
     , emptyEnv
       -- ** Local bindings
-    , HasLocals
-    , insertIntoLocals, getLocalIndex, getLocalName
+    , HasLocals(..)
+    , LocalBind
+    , createLocalBind
       -- ** Global bindings
-    , HasGlobals
-    ,  insertIntoGlobals, getGlobalTerm, 
+    , HasGlobals(..)
+    , GlobalBind
+    , createGlobalBind
     ) where
 
 import qualified Data.Text as T
 import Data.List ( elemIndex )
 
+import Core.Environment ( HasGlobals(..), HasLocals(..) )
+import Core.Lenses ( HasName(..), HasTerm(..) )
+
 import Language.Untyped.Syntax ( Term )
+
+import Lens.Micro ( Lens', lens, over, (^.) )
+import Lens.Micro.Extras ( view )
 
 {- |
 The environment in which an expression is evaluated.
 The environment consists of a list of local bindings and a list of global bindings.
 -}
-data Env = Env  { locals :: [LocalBind]     -- ^ The local bindings of an expression.
-                , globals :: [GlobalBind]   -- ^ The global bindings.
+data Env = Env  { _locals :: [LocalBind]     -- ^ The local bindings of an expression.
+                , _globals :: [GlobalBind]   -- ^ The global bindings.
                 } deriving (Eq, Show)
-
--- Still haven't understood what it's for
-data Binding = NameBinding
-    deriving (Eq, Show)
--- | A single local binding, with the name of the bound variable and additional info.
-type LocalBind = (T.Text, Binding)
--- | A single global binding, with the name of the bound variable, the expression bound to it and additional info.
-type GlobalBind = (T.Text, Binding, Term)
 
 -- | The empty environment, which is an environment without any binding.
 emptyEnv :: Env
-emptyEnv = Env { locals = [], globals = [] }
+emptyEnv = Env { _locals = [], _globals = [] }
 
-{-|
-The typeclass @HasLocals@ represents all data structures containing local bindings.
-In particular it gives access to three methods:
+{- |
+The @locals@ lens is used to modify the local environment.
 
-@
-    insertIntoLocals :: Text -> a -> a
-@ 
+==== __Examples__
 
-which inserts a new variable at the top of the binding list;
+To get the list of local bindings contained in an environment we can use 'view' or the '^.' operator:
 
 @
-    getLocalIndex :: Text -> a -> Maybe Int
-@ 
-
-which returns the index of a local variable if found;
-
+view locals env === env ^. locals
 @
-    getLocalName :: Int -> a -> Text
-@
-
-which returns the name of the variable at the n-th position.
 -}
-class HasLocals a where
-    -- | Given a variable name and an environment it inserts the variable into the local environment.
-    insertIntoLocals :: T.Text  -- ^ The variable name.
-                     -> a        -- ^ The given environment.
-                     -> a
-    -- | Given a variable name and an environment it returns the De Bruijn index of the local variable, if found.
-    getLocalIndex :: T.Text     -- ^ The variable name. 
-                  -> a          -- ^ The given environment.
-                  -> Maybe Int
-    -- | Given a De Brujin index and an environment it returns the corresponding name of the variable.
-    getLocalName :: Int         -- ^ The De Brujin index.
-                 -> a           -- ^ The given environment.
-                 -> Maybe T.Text
+locals :: Lens' Env [LocalBind]
+locals = lens _locals $ \env newBind -> env { _locals = newBind }
+
+{- |
+The @globals@ lens is used to modify the global environment.
+
+==== __Examples__
+
+To get the list of global bindings contained in an environment we can use 'view' or the '^.' operator:
+
+@
+view globals env === env ^. globals
+@
+-}
+globals :: Lens' Env [GlobalBind]
+globals = lens _globals $ \env newBind -> env { _globals = newBind } 
+
+{- ------- Local and Global bindings ------- -}
+
+-- | A single local binding, with the name of the bound variable and additional info.
+newtype LocalBind = LocalBind { _localName :: T.Text }
+    deriving (Eq, Show)
+
+-- | Creates a new local binding with the given name.
+createLocalBind :: T.Text -> LocalBind
+createLocalBind name = LocalBind { _localName = name }
+
+instance HasName LocalBind where
+    type NameF LocalBind = T.Text
+    nameL = lens _localName $ \binds newName -> binds { _localName = newName }
 
 -- | The instance of @HasLocals@ for a simple list of @LocalBind@s.
-instance HasLocals [LocalBind] where
-    insertIntoLocals var list = (var, NameBinding) : list
-    getLocalIndex var list = elemIndex var (fst <$> list)
-    getLocalName ind list = (fst <$> list) `getAt` ind
+instance HasLocals [LocalBind] LocalBind where
+
+    -- 'insertIntoLocals' just inserts the new binding 
+    -- at the beginning of the binding list
+    insertIntoLocals = ( : ) 
+
+    getLocalIndex var list = elemIndex var nameList
+      where
+        nameList :: [T.Text]
+        nameList = view nameL <$> list
+
+    getLocalBind ind list = list `getAt` ind
       where
         -- | Safe version of '(!!)'.
         getAt :: [a] -> Int -> Maybe a
@@ -95,52 +112,48 @@ instance HasLocals [LocalBind] where
             | n < 0     = Nothing
             | n == 0    = Just x
             | otherwise = xs `getAt` (n-1)
-  
+
 -- | The instance of @HasLocals@ for an environment containing local bindings.
-instance HasLocals Env where
-    insertIntoLocals var env = env { locals = insertIntoLocals var $ locals env }
-    getLocalIndex    var env = getLocalIndex var $ locals env
-    getLocalName     var env = getLocalName  var $ locals env
+instance HasLocals Env LocalBind where
+    insertIntoLocals  = over locals . insertIntoLocals 
+    getLocalIndex var = getLocalIndex var . view locals
+    getLocalBind var  = getLocalBind var . view locals
 
-{-|
-The typeclass @HasGlobals@ represents all data structures containing global bindings.
-In particular it gives access to these methods:
+{- ---- Global bindings ---- -}
 
-@
-    insertIntoGlobals :: (Text, Term) -> a -> a
-@ 
+-- | A single global binding, with the name of the bound variable, the expression bound to it and additional info.
+data GlobalBind = GlobalBind 
+    { _globalName :: T.Text
+    , _globalTerm :: Term
+    } deriving (Eq, Show)
 
-which inserts a new variable with its bound value at the top of the binding list;
+-- | Creates a new global binding from the given name and term.
+createGlobalBind :: T.Text -> Term -> GlobalBind
+createGlobalBind name term = GlobalBind { _globalName = name, _globalTerm = term }
 
-@
-  getGlobalTerm :: T.Text -> a -> Maybe Term
-@ 
+instance HasName GlobalBind where
+    type NameF GlobalBind = T.Text
+    nameL = lens _globalName $ \binds newName -> binds { _globalName = newName }
 
-which returns the term bound to a global variable if found.
--}
-class HasGlobals a where
-    -- | Given a pair @(Text, Term)@ representing the name of a new global variable and the expression bound to it and an environment,
-    -- it adds the new global variable into the environment.
-    insertIntoGlobals :: (T.Text, Term)  -- ^ The variable name with its bound expression.
-                      -> a               -- ^ The given environment.
-                      -> a
-    -- | Given a variable name and an environment it returns the term bound to the global variable, if found.
-    getGlobalTerm :: T.Text     -- ^ The variable name. 
-                  -> a          -- ^ The given environment.
-                  -> Maybe Term
+instance HasTerm GlobalBind where
+    type TermF GlobalBind = Term
+    termL = lens _globalTerm $ \binds newTerm -> binds { _globalTerm = newTerm }
 
 -- | The instance of @HasGlobals@ for a simple list of @GlobalBind@s.
-instance HasGlobals [GlobalBind] where
-    insertIntoGlobals (var, expr) list = (var, NameBinding, expr) : list
-    getGlobalTerm var list = go list 
+instance HasGlobals [GlobalBind] GlobalBind where
+    -- 'insertIntoLocals' just inserts the new binding 
+    -- at the beginning of the binding list
+    insertIntoGlobals = ( : )
+    
+    getGlobalBind var list = go list 
       where
-        go :: [GlobalBind] -> Maybe Term
+        go :: [GlobalBind] -> Maybe GlobalBind
         go [] = Nothing
-        go ((v, _, t):xs)
-            | v == var  = Just t
-            | otherwise = go xs
+        go (bind : binds)
+            | bind^.nameL == var  = Just bind
+            | otherwise           = go binds
 
 -- | The instance of @HasGlobal@ for an environment containing global bindings.
-instance HasGlobals Env where
-    insertIntoGlobals pair env = env { globals = insertIntoGlobals pair $ globals env}
-    getGlobalTerm var env = getGlobalTerm var $ globals env
+instance HasGlobals Env GlobalBind where
+    insertIntoGlobals = over globals . insertIntoGlobals
+    getGlobalBind var = getGlobalBind var . view globals

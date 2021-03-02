@@ -8,23 +8,13 @@ terms are evaluated.
 
 module Language.Untyped.Monad 
     ( -- * The monad
-      Eval(..)
+      Eval(..),
+      CM.reduceEval
     ) where
 
-import Language.Untyped.Environment ( Env )
-import Control.Monad.Reader
-import Control.Monad.Catch
+import qualified Core.Monad as CM
 
-{- |
-The Evaluation monad: it gives access to a lexical scope based on the
-environment type @Env@, and the power to do IO through @MonadIO@.
--}
-newtype Eval a = Eval { runEval :: ReaderT Env IO a }
-    deriving ( Functor
-             , Applicative
-             , Monad
-             , MonadIO
-             , MonadReader Env
-             , MonadThrow
-             , MonadCatch
-             , MonadMask )
+import Language.Untyped.Environment ( Env )
+
+-- | Type synonym for the @Eval@ monad.
+type Eval = CM.Eval Env

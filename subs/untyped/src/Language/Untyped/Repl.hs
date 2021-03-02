@@ -12,14 +12,17 @@ module Language.Untyped.Repl
 
 import qualified Data.Text as T
 
-import Language.Untyped.Syntax ( Term )
-import Language.Untyped.Parser ( parseTerm, parseLet, Parser, symbol )
-import Language.Untyped.Eval ( eval, step )
-import Language.Untyped.Environment ( emptyEnv, insertIntoGlobals )
-import Language.Untyped.Pretty
-    ( evalArrow, stepArrow, lastStepArrow, prettyTerm ) 
-import Language.Untyped.Monad ( Eval(runEval) )
+import Core.Parser( symbol )
+import Core.Pretty ( evalArrow, stepArrow, lastStepArrow )
 
+import Language.Untyped.Syntax ( Term )
+import Language.Untyped.Parser ( parseTerm, parseLet )
+import Language.Untyped.Eval ( eval, step )
+import Language.Untyped.Environment ( emptyEnv, insertIntoGlobals, createGlobalBind )
+import Language.Untyped.Pretty ( prettyTerm ) 
+import Language.Untyped.Monad ( Eval, reduceEval )
+
+import Data.Void ( Void )
 import Data.Text.Prettyprint.Doc ( (<+>), indent, Doc )
 import Data.List as List ( isPrefixOf )
 
@@ -31,10 +34,7 @@ import System.Console.Haskeline
 
 -- | The Read-Eval-Print-Loop of the Untyped language.
 repl :: IO ()
-repl = run (runInputT defaultSettings loop)
-  where 
-    run :: Eval a -> IO a
-    run t = runReaderT (runEval t) emptyEnv
+repl = reduceEval emptyEnv $ runInputT defaultSettings loop
 
 -- | The main loop of the Untyped REPL.
 loop :: InputT Eval ()
@@ -66,6 +66,8 @@ dispatchCommand :: T.Text -> InputT Eval ()
 dispatchCommand txt = lift (runParserT (parseCommand <* eof) "" txt) >>= \case
     Left parseErr -> lift (liftIO $ putStr $ errorBundlePretty parseErr) *> loop
     Right cmd -> execCmd cmd
+
+type Parser = ParsecT Void T.Text Eval
 
 -- | Parses a REPL 'Command'.
 parseCommand :: Parser Command
@@ -194,7 +196,7 @@ execCmd (AllStepsCmd term) = lift (allStepsPrint term) *> loop
             recPrintSteps t'
 -- Command to add a new global binding.
 execCmd (GlobalLetCmd (var, term)) =
-    mapInputT (local $ insertIntoGlobals (var, term)) loop
+    mapInputT (local $ insertIntoGlobals $ createGlobalBind var term) loop
 
 -- | Prints the help message.
 printHelpList :: InputT Eval ()
