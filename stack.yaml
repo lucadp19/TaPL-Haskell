@@ -31,6 +31,7 @@ resolver:
 #   - wai
 packages:
 - .
+- subs/core
 - subs/arith
 - subs/untyped
 - subs/fullUntyped
