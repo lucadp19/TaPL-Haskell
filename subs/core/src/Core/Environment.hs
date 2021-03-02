@@ -1,12 +1,11 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FunctionalDependencies #-}
 
-{-
+{- |
 The "Core.Environment" module contains two typeclasses:
-- the first typeclass is called 'HasLocals' and it is used for all environments
-containing local bindings;
-- the second typeclass is called 'HasGlobals' and it's used for environments
-with global bindings.
+
+    - the first typeclass is called 'HasLocals' and it is used for all environments containing local bindings;
+    - the second typeclass is called 'HasGlobals' and it's used for environments with global bindings.
 -}
 
 module Core.Environment 
@@ -23,19 +22,19 @@ The typeclass @HasLocals@ represents all data structures containing local bindin
 The typeclass gives access to three methods:
 
 @
-    insertIntoLocals :: bind -> env -> env
+    'insertIntoLocals' :: bind -> env -> env
 @ 
 
 which inserts a new binding at the top of the binding list;
 
 @
-    getLocalIndex :: Text -> env -> Maybe Int
+    'getLocalIndex' :: 'T.Text' -> env -> 'Maybe' 'Int'
 @ 
 
 which returns the index of a local variable if found;
 
 @
-    getLocalBind :: Int -> env -> Maybe bind
+    'getLocalBind' :: 'Int' -> env -> 'Maybe' bind
 @
 
 which returns the name of the variable at the n-th position.
@@ -75,13 +74,13 @@ The typeclass @HasGlobals@ represents all data structures containing global bind
 The typeclass gives access to two methods:
 
 @
-    insertIntoGlobals :: bind -> env -> env
+    'insertIntoGlobals' :: bind -> env -> env
 @ 
 
 which inserts a new global binding in the environment;
 
 @
-  getGlobalBind :: T.Text -> env -> Maybe bind
+    'getGlobalBind' :: 'T.Text' -> env -> 'Maybe' bind
 @ 
 
 which returns the global variable binding with the given name, if found.
@@ -95,6 +94,7 @@ class HasGlobals env bind | env -> bind where
         :: bind         -- ^ The variable name with its bound expression.
         -> env          -- ^ The given environment.
         -> env
+
     {- | 
     Given a variable name and an environment it returns
     the corresponding global variable bind if found,

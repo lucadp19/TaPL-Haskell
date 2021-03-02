@@ -1,10 +1,8 @@
 {-# LANGUAGE TypeFamilies #-}
 
-{-
-The 'Language.SimplyTyped.Env' module contains the environment used
-by this implementation of the Simply Typed Lambda Calculus.
-In particular it contains local binding and global binding,
-each with their own lenses and auxiliary functions.
+{- |
+The "Core.Lenses" module defines some lenses that can be useful
+when working with environments and records.
 -}
 
 module Core.Lenses 
@@ -22,7 +20,7 @@ import Data.List ( elemIndex )
 import Lens.Micro ( Lens' )
 
 {- $lenses
-To deal with the nested record structure the module implements several @'Lens'@es
+To deal with the nested record structure the module implements several @'Lens.Micro.Lens'@es
 used to modify or view the various field records.
 -}
 
@@ -41,7 +39,6 @@ class HasName a where
 The @HasType@ class is the typeclass of all records containing a "type" field.
 It contains a single lens, called @typeL@, used to modify the type field, and
 a type family @TypeF@ to specify the type of the field.
-
 -}
 class HasType a where
     -- | Type family synonym for the type of the "type" field.
@@ -53,7 +50,6 @@ class HasType a where
 The @HasTerm@ class is the typeclass of all records containing a "term" field.
 It contains a single lens, called @termL@, used to modify the term field, and
 a type family @TermF@ to specify the type of the field.
-
 -}
 class HasTerm a where
     -- | Type family synonym for the type of the "term" field.

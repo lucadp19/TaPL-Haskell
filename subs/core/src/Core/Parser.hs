@@ -48,13 +48,14 @@ lexeme = L.lexeme ws
 
 {- $parsers
 This module defines three parsers:
-- 'symbol' parses a given text or fails,
-- 'parens' parses a text in parenthesis or fails,
-- 'keysIdent' takes a list of reserved keywords and tries to parse an identifier:
-if it parses a reserved keyword it fails with an error message.
+    
+    - 'symbol' parses a given text or fails,
+    - 'parens' parses a text in parenthesis or fails,
+    - 'keysIdent' takes a list of reserved keywords and tries to parse an identifier:
+      if it parses a reserved keyword it fails with an error message.
 -}
 
-{-- | 
+{- | 
 The textual symbol parser: given a 'T.Text' symbol 
 this parser parses that symbol or fails without consuming input.
 -}
@@ -63,7 +64,7 @@ symbol :: MonadParsec e T.Text p
        -> p T.Text
 symbol = L.symbol ws
 
-{-- | 
+{- | 
 The parser for parentheses: parses something in parenthesis or
 fails without consuming input.
  -}

@@ -21,7 +21,7 @@ import Control.Monad.Catch ( MonadCatch, MonadMask, MonadThrow )
 The Evaluation monad: it gives access to a lexical scope based on the
 environment type @env@, and the power to do IO through 'MonadIO'.
 
-It's also an instance of 'MonadThrow'/'MonadCatch'/'MonadMask' to be used with
+It's also an instance of 'MonadThrow', 'MonadCatch' and'MonadMask' to be used with
 the "System.Console.Haskeline" package to implement a REPL.
 
 One way to use it is to declare a type synonym with the given environment:
@@ -45,7 +45,7 @@ newtype Eval env a = Eval { runEval :: ReaderT env IO a }
 
 {- | 
 The 'reduceEval' function takes an environment and a term of type 
-@'EvalEnv' env a@ and returns the evaluated contents of the monad.
+@'Eval' env a@ and returns the evaluated contents of the monad.
 -}
 reduceEval :: env         -- ^ Environment in which the monad has to be evaluated.
            -> Eval env a  -- ^ The monad.

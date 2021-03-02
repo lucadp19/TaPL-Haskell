@@ -6,6 +6,7 @@ terms and REPL results.
 module Core.Pretty 
     ( -- * Helpers
       text
+    , precParens
       -- ** Arrows
     , evalArrow
     , stepArrow
