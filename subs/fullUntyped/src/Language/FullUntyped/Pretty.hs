@@ -1,41 +1,30 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE OverloadedStrings #-}
+
+{- |
+The "Language.FullUntyped.Pretty" module contains some helper functions for pretty-printing
+terms and REPL results.
+-}
 
 module Language.FullUntyped.Pretty 
     ( -- * Main prettyfing function
       prettyTerm
-      -- * Helpers
-    , text
-    , evalArrow
-    , stepArrow
-    , lastStepArrow
     ) where
+
+import Core.Lenses ( nameL )
+import Core.Pretty ( text )
 
 import Language.FullUntyped.Syntax ( Term(..) )
 import Language.FullUntyped.Environment
-    ( HasLocals(insertIntoLocals, getLocalName) )
+    ( HasLocals(..), createLocalBind, LocalBind )
+
+import Lens.Micro ( (^.) )
 
 import qualified Data.Text as T
 import Data.Text.Prettyprint.Doc
 import Control.Monad.Reader
-
-
--- | Helper function for prettifying Text.
-text :: T.Text -> Doc ann
-text = pretty
-
--- | The arrow representing multistep evaluation.
-evalArrow :: Doc ann
-evalArrow = text (" ⇒ " :: T.Text)
-
--- | The arrow representing a single evaluation step.
-stepArrow :: Doc ann
-stepArrow = text (" ⟶ " :: T.Text)
-
--- | The arrow representing a value or stuck term.
-lastStepArrow :: Doc ann
-lastStepArrow = text (" ↛ " :: T.Text)
 
 {- |
 @prettyTerm@ takes a @Term@ and returns a pretty version contained in an 
@@ -45,7 +34,7 @@ The canonical choice for the monad is 'Language.FullUntyped.Monad.Eval'.
 -}
 prettyTerm :: forall m env ann.
               ( MonadReader env m
-              , HasLocals env) 
+              , HasLocals env LocalBind ) 
            => Term 
            -> m (Doc ann)
 prettyTerm = \case
@@ -63,11 +52,11 @@ prettyTerm = \case
     Prec n -> (text "prec" <+>) <$> appParens n
     IsZero n -> (text "isZero?" <+>) <$> appParens n
     -- Lambda abstractions, applications and variables
-    Var k -> asks (getLocalName k) >>= \case
-        Just name -> pure $ pretty name
+    Var k -> asks (getLocalBind k) >>= \case
+        Just bind -> pure $ pretty $ bind^.nameL
         Nothing   -> error "This cannot happen"
     Lam name body -> (lamText name <+>)
-        <$> local (insertIntoLocals name) (prettyTerm body)
+        <$> local (insertIntoLocals $ createLocalBind name) (prettyTerm body)
     App t1 t2 -> align . sep <$> do
         func <- appParens t1
         arg <- appParens t2

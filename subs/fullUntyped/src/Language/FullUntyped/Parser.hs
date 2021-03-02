@@ -1,17 +1,27 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE LambdaCase #-}
+
+{-|
+The "Language.FullUntyped.Parser" module contains the several parsers used to implement the
+Untyped Lambda Calculus. It exposes two parsers: one for terms that need to be evaluated
+(called @'parseTerm'@) and one for global let bindings (called @'parseLet'@).
+-}
+
 module Language.FullUntyped.Parser 
     ( -- * Language parsers
       parseTerm
     , parseLet
-      -- ** Helpers
-    , Parser
-    , symbol
     ) where
+
+import Core.Parser
+    ( ws, lexeme, symbol, parens, keysIdent )
+import Core.Lenses ( HasTerm(termL) ) 
 
 import Language.FullUntyped.Syntax ( Term(..) )
 import Language.FullUntyped.Environment
 import Language.FullUntyped.Monad ( Eval )
+
+import Lens.Micro ( (^.) )
 
 import Data.Void ( Void )
 import Data.List ( foldl1' )
@@ -29,32 +39,9 @@ type Parser = ParsecT Void T.Text Eval
 reserved :: [T.Text]
 reserved = ["if", "then", "else", "succ", "prec", "isZero?", "True", "False"]
 
--- | The whitespace lexer.
-ws :: Parser ()
-ws = L.space space1 (L.skipLineComment "--") (L.skipBlockComment "{-" "-}")
-
--- | The parser for lexemes.
-lexeme :: Parser T.Text -> Parser T.Text
-lexeme = L.lexeme ws
-
--- | The textual symbol parser.
-symbol :: T.Text -> Parser T.Text
-symbol = L.symbol ws
-
--- | The parser for parentheses.
-parens :: Parser a -> Parser a
-parens = between (symbol "(") (symbol ")")
-
 -- | Parses the name of an identifier.
 identifier :: Parser T.Text
-identifier = lexeme $ do
-    ident <- some letterChar
-    check $ T.pack ident
-  where
-    check :: T.Text -> Parser T.Text
-    check name
-        | name `elem` reserved = fail $ "keyword " <> T.unpack name <> " cannot be an identifier."
-        | otherwise = pure name
+identifier = keysIdent reserved
 
 -- | Parses a local or global variable and returns the correct De Bruijn index or the correct global term.
 parseVar :: Parser Term
@@ -62,8 +49,8 @@ parseVar = do
     var <- identifier
     asks (getLocalIndex var) >>= \case
         Just n  -> pure $ Var n
-        Nothing -> asks (getGlobalTerm var) >>= \case
-            Just term -> pure term
+        Nothing -> asks (getGlobalBind var) >>= \case
+            Just bind -> pure $ bind^.termL
             Nothing   -> fail  $ "no local or global variable named " <> T.unpack var
 
 -- | Parses a lambda abstraction.
@@ -72,8 +59,7 @@ parseLambda = do
     char '\\'
     boundVar <- label "identifier" identifier
     symbol "."
-    -- @local (insertIntoLocals boundVar)@ adds @boundVar@ to the list of local variables
-    body <- local (insertIntoLocals boundVar) parseTerm
+    body <- local (insertIntoLocals $ createLocalBind boundVar) parseTerm
     pure $ Lam boundVar body
 
 -- | Parses a literal, which can be `LitTrue`, `LitFalse`, `LitZero`, a variable or a term in parenthesis.

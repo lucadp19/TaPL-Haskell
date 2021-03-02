@@ -1,3 +1,8 @@
+{- |
+The "Language.FullUntyped.Syntax" module contains this Extended Untyped Lambda Calculus'
+AST (Abstract Syntax Tree) implementation (@'Term'@).
+-}
+
 module Language.FullUntyped.Syntax where
 
 import qualified Data.Text as T

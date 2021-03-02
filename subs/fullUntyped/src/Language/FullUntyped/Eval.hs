@@ -1,4 +1,11 @@
 {-# LANGUAGE LambdaCase #-}
+
+{- |
+The "Language.FullUntyped.Eval" module defines two evaluating functions:
+the 'step' evaluator performs a single evaluation step, 
+whereas the 'eval' function fully evaluates the expression.
+-}
+
 module Language.FullUntyped.Eval 
     ( -- * Evaluators
       -- ** Single step

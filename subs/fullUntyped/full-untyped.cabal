@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 4ef29aaa1bcb2cf1588ccfa3f1ebcfaf6a58f39b0964eb0909a87d3950ef8a0a
+-- hash: 30d44ce0929d7cab2857344a5985889abf158842ab87313cf23dc7b89e39a605
 
 name:           full-untyped
 version:        0.2.1.1
@@ -39,9 +39,11 @@ library
       src
   build-depends:
       base >=4.7 && <5
+    , core
     , exceptions
     , haskeline >=0.8.1.1
     , megaparsec
+    , microlens
     , mtl
     , prettyprinter
     , text
@@ -59,10 +61,12 @@ test-suite fullUntyped-test
   ghc-options: -threaded -rtsopts -with-rtsopts=-N -Wall -haddock
   build-depends:
       base >=4.7 && <5
+    , core
     , exceptions
     , full-untyped
     , haskeline >=0.8.1.1
     , megaparsec
+    , microlens
     , mtl
     , prettyprinter
     , text

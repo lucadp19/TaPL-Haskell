@@ -1,22 +1,29 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE LambdaCase #-}
 
+{- |
+The "Language.FullUntyped.Repl" module defines the Read-Eval-Print-Loop
+used by this implementation of the Extended Untyped Lambda Calculus.
+-}
+
 module Language.FullUntyped.Repl
     ( repl
     ) where
 
 import qualified Data.Text as T
 
-import Language.FullUntyped.Syntax ( Term )
-import Language.FullUntyped.Parser ( parseTerm, parseLet, Parser, symbol )
-import Language.FullUntyped.Eval ( eval, step )
-import Language.FullUntyped.Environment ( emptyEnv, insertIntoGlobals )
-import Language.FullUntyped.Pretty
-    ( evalArrow, stepArrow, lastStepArrow, prettyTerm ) 
-import Language.FullUntyped.Monad ( Eval(runEval) )
+import Core.Pretty ( text, evalArrow, stepArrow, lastStepArrow )
+import Core.Parser ( symbol )
 
+import Language.FullUntyped.Syntax ( Term )
+import Language.FullUntyped.Parser ( parseTerm, parseLet )
+import Language.FullUntyped.Eval ( eval, step )
+import Language.FullUntyped.Environment ( emptyEnv, insertIntoGlobals, createGlobalBind )
+import Language.FullUntyped.Pretty ( prettyTerm ) 
+import Language.FullUntyped.Monad ( Eval, reduceEval )
+
+import Data.Void ( Void )
 import Data.Text.Prettyprint.Doc ( (<+>), indent, Doc )
-import Data.List as List ( isPrefixOf )
 
 import Control.Monad.Reader
 
@@ -26,10 +33,7 @@ import System.Console.Haskeline
 
 -- | The Read-Eval-Print-Loop of the FullUntyped language.
 repl :: IO ()
-repl = run $ runInputT defaultSettings loop
-  where 
-    run :: Eval a -> IO a
-    run t = runReaderT (runEval t) emptyEnv
+repl = reduceEval emptyEnv $ runInputT defaultSettings loop
 
 -- | The main loop of the FullUntyped REPL.
 loop :: InputT Eval ()
@@ -61,6 +65,9 @@ dispatchCommand :: T.Text -> InputT Eval ()
 dispatchCommand txt = lift (runParserT (parseCommand <* eof) "" txt) >>= \case
     Left parseErr -> lift (liftIO $ putStr $ errorBundlePretty parseErr) *> loop
     Right cmd -> execCmd cmd
+
+-- | Parser type synonym.
+type Parser = ParsecT Void T.Text Eval
 
 -- | Parses a REPL 'Command'.
 parseCommand :: Parser Command
@@ -189,7 +196,7 @@ execCmd (AllStepsCmd term) = lift (allStepsPrint term) *> loop
             recPrintSteps t'
 -- Command to add a new global binding.
 execCmd (GlobalLetCmd (var, term)) =
-    mapInputT (local $ insertIntoGlobals (var, term)) loop
+    mapInputT (local $ insertIntoGlobals $ createGlobalBind var term) loop
 
 -- | Prints the help message.
 printHelpList :: InputT Eval ()
