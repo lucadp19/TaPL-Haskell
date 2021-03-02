@@ -1,5 +1,5 @@
 name:                arith
-version:             0.2.1.1
+version:             0.2.2.0
 github:              "lucadp19/TaPL-Haskell"
 license:             GPL-3
 author:              "Luca De Paulis"
@@ -24,6 +24,7 @@ dependencies:
 - transformers
 - prettyprinter
 - haskeline
+- core
 
 default-extensions:
 - OverloadedStrings
@@ -41,6 +42,5 @@ tests:
     - -rtsopts
     - -with-rtsopts=-N
     - -Wall
-    - -XOverloadedStrings
     dependencies:
     - arith

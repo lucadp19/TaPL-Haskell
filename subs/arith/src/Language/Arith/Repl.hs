@@ -10,18 +10,20 @@ module Language.Arith.Repl
       repl
     ) where
 
-import qualified Data.Text as T
+import Core.Pretty 
+    ( evalArrow, stepArrow, lastStepArrow ) 
+import Core.Parser ( symbol )
 
 import Language.Arith.Syntax ( Term(..) )
-import Language.Arith.Parser ( parseTerm, Parser, symbol )
+import Language.Arith.Parser ( parseTerm )
 import Language.Arith.Eval ( step, eval )
-import Language.Arith.Pretty ( evalArrow, stepArrow, lastStepArrow ) 
+
+import qualified Data.Text as T
+import Data.Void ( Void )
 
 import Data.Text.Prettyprint.Doc
 
 import Text.Megaparsec hiding ( (<?>) )
-import Data.Void ( Void )
-import Data.List as List ( isPrefixOf )
 
 import System.Console.Haskeline
 import Control.Monad.IO.Class ( liftIO )
@@ -58,6 +60,9 @@ dispatchCommand :: T.Text -> InputT IO ()
 dispatchCommand txt = case runParser (parseCommand <* eof) "" txt of
     Left parseErr -> liftIO (putStr $ errorBundlePretty parseErr) *> loop
     Right cmd -> execCmd cmd
+  
+-- | Parser type synonym.
+type Parser = Parsec Void T.Text
   
 -- | Parses a REPL 'Command'.
 parseCommand :: Parser Command

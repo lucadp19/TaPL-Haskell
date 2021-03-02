@@ -6,7 +6,8 @@ module Language.Arith.Syntax
       Term(..)
     ) where
 
-import Language.Arith.Pretty ( text )
+import Core.Pretty ( text )
+
 import Data.Text.Prettyprint.Doc
 
 

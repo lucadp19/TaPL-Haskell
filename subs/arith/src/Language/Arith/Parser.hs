@@ -12,6 +12,8 @@ module Language.Arith.Parser
     , symbol
     ) where
 
+import Core.Parser ( ws, symbol, parens )
+
 import Language.Arith.Syntax ( Term(..) )
 
 import qualified Data.Text as T
@@ -23,18 +25,6 @@ import qualified Text.Megaparsec.Char.Lexer as L
 
 -- | The monadic parser.
 type Parser = Parsec Void T.Text
-
--- | The whitespace lexer.
-ws :: Parser ()
-ws = L.space space1 (L.skipLineComment "--") (L.skipBlockComment "{-" "-}")
-
--- | The textual symbol parser.
-symbol :: T.Text -> Parser T.Text
-symbol = L.symbol ws
-
--- | The parser for parentheses.
-parens :: Parser a -> Parser a
-parens = between (symbol "(") (symbol ")")
 
 -- | Parses a literal value: `LitTrue`, `LitFalse`, `LitZero` or a term in parentheses.
 parseLiteral :: Parser Term

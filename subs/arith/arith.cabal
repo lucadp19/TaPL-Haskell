@@ -4,10 +4,10 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 16aa038793143b2053d0c846ad1a140b1b15aae39ac9d9867faeb1bacc232015
+-- hash: 544742abb582fef1a15ed36fb13d22d93ba3722a5b93395d7e16f95388e83d42
 
 name:           arith
-version:        0.2.1.1
+version:        0.2.2.0
 description:    Please see the README on GitHub at <https://github.com/lucadp19/TaPL-Haskell/tree/master/arith#readme>
 homepage:       https://github.com/lucadp19/TaPL-Haskell#readme
 bug-reports:    https://github.com/lucadp19/TaPL-Haskell/issues
@@ -27,7 +27,6 @@ library
   exposed-modules:
       Language.Arith.Eval
       Language.Arith.Parser
-      Language.Arith.Pretty
       Language.Arith.Repl
       Language.Arith.Syntax
   other-modules:
@@ -37,6 +36,7 @@ library
   default-extensions: OverloadedStrings LambdaCase
   build-depends:
       base >=4.7 && <5
+    , core
     , haskeline
     , megaparsec
     , prettyprinter
@@ -52,10 +52,11 @@ test-suite arith-test
   hs-source-dirs:
       test
   default-extensions: OverloadedStrings LambdaCase
-  ghc-options: -threaded -rtsopts -with-rtsopts=-N -Wall -XOverloadedStrings
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N -Wall
   build-depends:
       arith
     , base >=4.7 && <5
+    , core
     , haskeline
     , megaparsec
     , prettyprinter
