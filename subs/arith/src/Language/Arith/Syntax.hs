@@ -1,6 +1,11 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 
+{- |
+The "Language.Arith.Syntax" module contains this language's
+Abstract Syntax Tree implementation (@'Term'@).
+-}
+
 module Language.Arith.Syntax
     ( -- * Term
       Term(..)

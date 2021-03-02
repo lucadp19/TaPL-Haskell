@@ -1,3 +1,8 @@
+{- |
+The "Language.Untyped.Syntax" module contains this Untyped Lambda Calculus
+AST (Abstract Syntax Tree) implementation (@'Term'@).
+-}
+
 module Language.Untyped.Syntax where
 
 import qualified Data.Text as T

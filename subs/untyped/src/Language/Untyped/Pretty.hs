@@ -2,6 +2,11 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE FlexibleContexts #-}
 
+{- |
+The "Language.Untyped.Pretty" module contains some helper functions for pretty-printing
+terms and REPL results.
+-}
+
 module Language.Untyped.Pretty 
     ( -- * Main prettyfing function
       prettyTerm

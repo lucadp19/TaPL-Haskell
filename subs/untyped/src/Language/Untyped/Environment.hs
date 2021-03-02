@@ -3,7 +3,7 @@
 {-# LANGUAGE DuplicateRecordFields  #-}
 {-# LANGUAGE TypeFamilies #-}
 
-{-
+{- |
 The "Language.Untyped.Environment" module contains the environment used
 by this implementation of the Untyped Lambda Calculus.
 In particular it contains local binding and global binding,
@@ -78,6 +78,8 @@ globals :: Lens' Env [GlobalBind]
 globals = lens _globals $ \env newBind -> env { _globals = newBind } 
 
 {- ------- Local and Global bindings ------- -}
+
+{- ---- Local bindings ---- -}
 
 -- | A single local binding, with the name of the bound variable and additional info.
 newtype LocalBind = LocalBind { _localName :: T.Text }
