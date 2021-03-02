@@ -1,7 +1,5 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FunctionalDependencies #-}
-{-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE StarIsType #-}
 
 {-
 The "Core.Environment" module contains two typeclasses:
@@ -13,25 +11,19 @@ with global bindings.
 
 module Core.Environment 
     ( -- * Local bindings
-      HasLocals
-    , insertIntoLocals, getLocalIndex, getLocalBind
+      HasLocals(..)
       -- * Global bindings
-    , HasGlobals
-    , insertIntoGlobals, getGlobalBind, 
+    , HasGlobals(..)
     ) where
 
 import qualified Data.Text as T
 
 {-|
 The typeclass @HasLocals@ represents all data structures containing local bindings.
-
-First of all it defines a type synonym, @LBind@, which represents 
-the type of a single local binding in the environment.
-
-Then the typeclass gives access to three methods:
+The typeclass gives access to three methods:
 
 @
-    insertIntoLocals :: LBind env -> env -> env
+    insertIntoLocals :: bind -> env -> env
 @ 
 
 which inserts a new binding at the top of the binding list;
@@ -43,20 +35,18 @@ which inserts a new binding at the top of the binding list;
 which returns the index of a local variable if found;
 
 @
-    getLocalBind :: Int -> env -> Maybe (LBind env)
+    getLocalBind :: Int -> env -> Maybe bind
 @
 
 which returns the name of the variable at the n-th position.
 -}
-class HasLocals env where
-    -- | Type synonym that represents a local binding.
-    type LBind env :: *
+class HasLocals env bind | env -> bind where
     {- | 
     Given a variable binding and an environment 
     it inserts the variable into the local environment.
     -}
     insertIntoLocals 
-        :: LBind env    -- ^ The variable binding.
+        :: bind         -- ^ The variable binding.
         -> env          -- ^ The given environment.
         -> env
 
@@ -78,37 +68,31 @@ class HasLocals env where
     getLocalBind 
         :: Int       -- ^ The De Brujin index.
         -> env       -- ^ The given environment.
-        -> Maybe (LBind env)
+        -> Maybe bind
 
 {-|
 The typeclass @HasGlobals@ represents all data structures containing global bindings.
-
-First of all it defines a type synonym, @GBind@, which represents 
-the type of a single global binding in the environment.
-
-Then the typeclass gives access to two methods:
+The typeclass gives access to two methods:
 
 @
-    insertIntoGlobals :: GBind env -> env -> env
+    insertIntoGlobals :: bind -> env -> env
 @ 
 
 which inserts a new global binding in the environment;
 
 @
-  getGlobalBind :: T.Text -> env -> Maybe (GBind env)
+  getGlobalBind :: T.Text -> env -> Maybe bind
 @ 
 
 which returns the global variable binding with the given name, if found.
 -}
-class HasGlobals env where
-    -- | Type synonym that represents a global binding.
-    type GBind env :: *
+class HasGlobals env bind | env -> bind where
     {- | 
     Given a global binding and an environment,
     it adds the new global variable into the environment. 
     -}
     insertIntoGlobals 
-        :: GBind env    -- ^ The variable name with its bound expression.
+        :: bind         -- ^ The variable name with its bound expression.
         -> env          -- ^ The given environment.
         -> env
     {- | 
@@ -119,4 +103,4 @@ class HasGlobals env where
     getGlobalBind 
         :: T.Text       -- ^ The variable name. 
         -> env          -- ^ The given environment.
-        -> Maybe (GBind env)
+        -> Maybe bind
